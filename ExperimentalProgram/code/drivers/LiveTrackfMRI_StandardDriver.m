@@ -1,5 +1,5 @@
-function params = LiveTrackfMRIStandardDriver(expt)
-% params = LiveTrackfMRIStandardDriver(expt)
+function params = LiveTrackfMRI_StandardDriver(expt)
+% params = LiveTrackfMRI_StandardDriver(expt)
 %
 % Do the eye tracking here and assign to params
 %
