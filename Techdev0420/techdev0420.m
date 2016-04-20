@@ -1,7 +1,7 @@
 %% set saving path and names
 formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
-vidName = ['VIDEO_' timestamp '.avi '];
+vidName = ['VIDEO_' timestamp];
 reportName = ['REPORT_' timestamp '.mat'];
 savePath = '/Users/giulia/Desktop/TEST';
 
@@ -13,7 +13,7 @@ vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
 src = getselectedsource(vid);
 %% initialize
 fprintf('\n Press spacebar to initialize LiveTrack.');
-pause;
+pause; 
 %video recording
 triggerconfig(vid, 'manual') %change to appropriate trigger configuration
 vid.FramesPerTrigger = Inf;
@@ -30,7 +30,7 @@ pause;
 R = LiveTrackHIDcomm(deviceNumber,'begin');
 start(vid); %initialize video ob
 t = 0;
-fprintf('\n LiveTrack> Listening...');
+fprintf('\n LiveTrack: Listening...');
 while t == 0
     R = LiveTrackHIDcomm(deviceNumber,'continue-returnlast');
     if R.Digital_IO1 == 1

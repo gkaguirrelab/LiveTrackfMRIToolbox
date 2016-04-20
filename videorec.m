@@ -1,5 +1,5 @@
 %% set video name and acquisition mode
-vidName = 'TESTvid10.avi';
+vidName = 'TESTvid12.avi';
 
 manualStop = 1;
 recLength = 10 ; %in seconds
