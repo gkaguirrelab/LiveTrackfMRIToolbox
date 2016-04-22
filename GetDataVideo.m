@@ -1,4 +1,4 @@
-function [Report] = GetDataVideo (TRnum)
+function [Report] = GetDataVideo
 
 % Usage
 % savePath = '/Users/giulia/Desktop/TEST';
@@ -9,9 +9,6 @@ formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
 vidName = ['LiveTrackVIDEO_' timestamp];
 reportName = ['LiveTrackREPORT_' timestamp '.mat'];
-
-feature('jit',0)
-feature('accel',0)
 
 
 %% find  Livetrack
@@ -34,69 +31,44 @@ vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual') %change to appropriate trigger configuration
 
 preview(vid);
-R = LiveTrackHIDcomm(deviceNumber,'begin');
+[reports] = [0];
+LiveTrackHIDcomm(deviceNumber,'end');
+PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
+LiveTrackHIDcomm(deviceNumber,'begin');
 start(vid); %initialize video ob
-TR = 0;
+firstTTL = true;
+stopTime = Inf;
 ii = 1;
-jj = 1;
 log = true;
 fprintf('\n LiveTrack: Listening...');
 
 %% logging
-
-while log 
-Q = LiveTrackHIDcomm(deviceNumber,'continue-returnlast');
-  
-
-if Q.Digital_IO1 == 0 && TR <=TRnum
-%     ii = ii+1;     
-    R1 = LiveTrackHIDcomm(deviceNumber,'continue-returnlast');
-        Report (ii) = R1;
-        
-    elseif Q.Digital_IO1 == 1 && TR ==0
-%         ii = ii+1;
+persistent buffer
+while log
+    PsychHID('ReceiveReports',deviceNumber);
+    [reports]=PsychHID('GiveMeReports',deviceNumber);
+    buffer = [buffer reports];
+    R = HID2struct(buffer);
+    Report = R;
+    R = 0;
+    [reports] = [0];
+    ii = ii+1;
+    if Report(end).Digital_IO1 == 1 && firstTTL
         trigger(vid);
-        err = PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
-        R2 = LiveTrackHIDcomm(deviceNumber,'continue-returnlast');
-        Report (ii) = R2;
-%                 
-        TR = TR+1;
-        fprintf('\n TTL detected! (TR = %d)\n',TR);
-    elseif Q.Digital_IO1 == 1 && TR<TRnum
-%         ii = ii+1;
-        R3 = LiveTrackHIDcomm(deviceNumber,'continue-returnlast');
-        Report (ii) = R3;
-                
-%         TTLspacing(jj) = Report(ii).Digital_IO1- Report(ii -1).Digital_IO1;
-%         if TTLspacing(jj) == 0
-%             ii = ii+1;
-%             jj = jj+1;
-%             fprintf('\nartifact\n');
-%         else
-            TR = TR+1;
-%             ii = ii+1;
-            jj = jj+1;
-            fprintf('\n TTL detected! (TR = %d)\n',TR);
-%         end
-    elseif Q.Digital_IO1 == 1 && TR == TRnum
-        buff = 0;
-        for buff = 1:500
-            ii = ii+1;
-            R4 = LiveTrackHIDcomm(deviceNumber,'continue-returnlast');
-            Report (ii) = R4;
-                
-                buff=buff+1;
-        end
-        log = false;
-    
+        firstTTL = false;
+        fprintf('\n TTL detected! \n');
+        stopTime = datenum(clock + [0, 0, 0, 0, 0, 20]);
+    end
+    if datenum(clock) > stopTime
+         log = false;
+    end
 end
-% ii = ii+1; 
-end
-
+LiveTrackHIDcomm(deviceNumber,'end');
 stop(vid);
 stoppreview(vid);
 
-LiveTrackHIDcomm(deviceNumber,'end');
+
+
 closepreview(vid);
 save((fullfile('/Users/giulia/Desktop/TEST/',reportName)), 'Report');
 fprintf('Matfile and video saved.\n');
