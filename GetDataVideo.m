@@ -19,7 +19,7 @@ reportName = ['LiveTrackREPORT_' timestamp '.mat'];
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 % video recording
 vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
-src = getselectedsource(vid);
+src = getselectedsource(vid); 
 
 %% initialize
 fprintf('\n Press spacebar to initialize LiveTrack.');
@@ -38,7 +38,7 @@ PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
 LiveTrackHIDcomm(deviceNumber,'begin');
 start(vid); %initialize video ob
 firstTTL = true;
-recTime = 360; %in seconds
+recTime = 20; %in seconds
 ii = 1;
 log = true;
 TimerFlag = false;
