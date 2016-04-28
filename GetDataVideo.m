@@ -34,12 +34,11 @@ vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual') %change to appropriate trigger configuration
 preview(vid);
 [reports] = [0];
-LiveTrackHIDcomm(deviceNumber,'end');
 PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
 LiveTrackHIDcomm(deviceNumber,'begin');
 start(vid); %initialize video ob
 firstTTL = true;
-recTime = 60; %in seconds
+recTime = 360; %in seconds
 ii = 1;
 log = true;
 TimerFlag = false;
@@ -65,10 +64,8 @@ while log
         TimerFlag = true;
     end
     if TimerFlag == true
-        t = timer('TimerFcn',@timerFun,'StartDelay',recTime);
-        t.UserData = true;
-        start(t);
-        while get(t,'UserData')
+        tic
+        while toc < recTime * 1.5 %buffer required to record the exact amount of seconds
             display('LiveTrack: recording...');
             pause(1);
             PsychHID('ReceiveReports',deviceNumber);
@@ -80,29 +77,17 @@ while log
             [reports] = [0];
             ii = ii+1;
         end
-        log = t.UserData;
-        stop(t);
-        delete(t);
+        display('LiveTrack:stopping...');
+        log = false;
     end
 end
-
+% stop video e data recording
 LiveTrackHIDcomm(deviceNumber,'end');
 stop(vid);
 stoppreview(vid);
-
-
-
 closepreview(vid);
 save((fullfile('/Users/giulia/Desktop/TEST/',reportName)), 'Report');
 fprintf('Matfile and video saved.\n');
 
-
-
-
-
-function timerFun(obj,evt)
-display('LiveTrack:stopping...');
-log = false;
-set(obj,'UserData',false);
 
 
