@@ -18,10 +18,16 @@ if isempty(strfind(path, exp.baseDir))
 end
 gitInfo.(sprintf('%sSVNInfo', exp.mFileName)) = GetGITInfo(exp.baseDir);
 
+%% Show the preview window?
+showPreviewWindow = GetWithDefault('>>> <strong>Show preview window?</strong>', 1);
+if showPreviewWindow
+    LiveTrackfMRI_Preview;
+end
+
 %% Standard read of configuration information
 [exp.configFileDir,exp.configFileName,exp.protocolDataDir,exp.protocolList,exp.protocolIndex] = GetExperimentConfigInfo(exp.baseDir,exp.mFileName,exp.dataDir);
 
-saveDropbox = GetWithDefault('>>> Save into Dropbox folder?', 1);
+saveDropbox = GetWithDefault('>>> <strong>Save into Dropbox folder?</strong>', 1);
 if saveDropbox
     dataPath = getpref('OneLight', 'dataPath');
     exp.protocolDataDir = fullfile(dataPath, exp.protocolList(exp.protocolIndex).dataDirectory);
@@ -31,12 +37,15 @@ end
 exp.configFileDir = fullfile(exp.configFileDir, 'protocols');
 
 %% Set up data directory for this subject
-[exp.subject,exp.subjectDataDir,exp.saveFileName] = OLGetSubjectDataDirMR(exp.protocolDataDir,exp.protocolList,exp.protocolIndex);
+[exp.subject,exp.subjectDataDir,exp.saveFileName] = LiveTrackfMRI_GetSubjectDataDirMR(exp.protocolDataDir,exp.protocolList,exp.protocolIndex);
 [~, exp.obsIDAndRun] = fileparts(exp.saveFileName);
 
 %% Store the date/time when the experiment starts.
 exp.experimentTimeNow = now;
 exp.experimentTimeDateString = datestr(exp.experimentTimeNow);
+
+%% Set the recording time
+exp.recTimeInSecs = GetWithDefault('>>> <strong>Recording time in seconds?</strong>', 20);
 
 %% Now we can execute the driver associated with this protocol.
 driverCommand = sprintf('params = %s(exp);', exp.protocolList(exp.protocolIndex).driver);

@@ -1,4 +1,4 @@
-function LiveTrack_preview
+function LiveTrackfMRI_Preview
 
 % Use this function to adjust camera position and focus. This function
 % does not save out any video.
