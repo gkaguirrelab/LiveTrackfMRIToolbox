@@ -11,6 +11,7 @@ vidName = fullfile(expt.subjectDataDir, [expt.obsIDAndRun '.avi']);
 %% find  Livetrack
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
+LiveTrackHIDcomm(deviceNumber,'end'); %stop tracking
 % video recording
 vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
 src = getselectedsource(vid); 

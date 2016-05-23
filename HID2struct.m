@@ -20,10 +20,15 @@ if isstruct(reports), % input is a structure (return from giveMeReports)
     R(length(reports)).PupilTracked = 0;
     R(length(reports)).frameCount = 0;
     R(length(reports)).Digital_IO1 = 0;
+    R(length(reports)).Digital_IO2 = 0;
     R(length(reports)).LeftPupilWidth = 0;
     R(length(reports)).LeftPupilHeight = 0;
     R(length(reports)).LeftPupilCameraX = 0;
     R(length(reports)).LeftPupilCameraY = 0;
+    R(length(reports)).LeftGlint1CameraX = 0;
+    R(length(reports)).LeftGlint1CameraY = 0;
+    R(length(reports)).LeftGlint2CameraX = 0;
+    R(length(reports)).LeftGlint2CameraY = 0;
     
     c=0;
 %     for i=25:2:39,
@@ -68,10 +73,14 @@ for k=1:noOfReports,
     
     % Assign parameters
     R(k).Digital_IO1 = r(5);
-%     R(k).Digital_IO2 = r(6);
+    R(k).Digital_IO2 = r(6);
     R(k).LeftPupilWidth = r(25);
     R(k).LeftPupilHeight = r(27);
     R(k).LeftPupilCameraX = r(29);
     R(k).LeftPupilCameraY = r(31);
+    R(k).LeftGlint1CameraX = r(33);
+    R(k).LeftGlint1CameraY = r(35);
+    R(k).LeftGlint2CameraX = r(37);
+    R(k).LeftGlint2CameraY = r(39);
 end
 
