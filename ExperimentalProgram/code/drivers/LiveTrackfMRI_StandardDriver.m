@@ -26,7 +26,7 @@ vid.LoggingMode = 'disk';
 diskLogger = VideoWriter(vidName, 'Motion JPEG AVI');
 vid.DiskLogger = diskLogger;
 % set manual trigger
-triggerconfig(vid, 'manual') %change to appropriate trigger configuration
+triggerconfig(vid, 'manual') 
 preview(vid);
 [reports] = [0];
 PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));

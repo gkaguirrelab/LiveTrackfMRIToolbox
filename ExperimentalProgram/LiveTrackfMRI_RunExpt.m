@@ -7,8 +7,7 @@ exp.baseDir = fileparts(which(exp.mFileName));
 
 % Figure out the data directory path.  The data directory should be on the
 % same level as the code directory.
-i = strfind(exp.baseDir, '/code');
-exp.dataDir = sprintf('%sdata', exp.baseDir(1:i));
+exp.dataDir = fullfile(exp.baseDir, 'data');
 
 % Dynamically add the program code to the path if it isn't already on it.
 if isempty(strfind(path, exp.baseDir))
@@ -55,3 +54,8 @@ eval(driverCommand);
 % data 'exp' and the SVN info.
 save(exp.saveFileName, 'params', 'exp', 'gitInfo');
 fprintf('- Data saved to %s\n', exp.saveFileName);
+
+% We clear here to fix some issues with report buffer. We don't really know
+% why clearing all should help us, but all other attempts have been
+% unsuccessful.
+clear all;
