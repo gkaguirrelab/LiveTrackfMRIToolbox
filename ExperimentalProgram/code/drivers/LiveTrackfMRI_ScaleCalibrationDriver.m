@@ -12,7 +12,6 @@ recTime = expt.recTimeInSecs;
 %% find  Livetrack
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
-LiveTrackHIDcomm(deviceNumber,'end'); %stop tracking
 % video recording
 vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
 src = getselectedsource(vid);
@@ -26,7 +25,7 @@ pause;
 vid.FramesPerTrigger = Inf;
 frameRate = 30; %default fps
 vid.LoggingMode = 'disk';
-diskLogger = VideoWriter(fullfile(savepath,vidName), 'Motion JPEG AVI');
+diskLogger = VideoWriter(vidName, 'Motion JPEG AVI');
 vid.DiskLogger = diskLogger;
 % set manual trigger
 triggerconfig(vid, 'manual') 
