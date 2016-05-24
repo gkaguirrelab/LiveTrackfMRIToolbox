@@ -1,6 +1,9 @@
 function R = HID2struct(reports)
 % HID2struct transforms report packets with raw data into a
 % structure array.
+% This function follows the section 'Using the ?HID? interface' on the
+% LiveTrack User Manual (p.23).
+
 
 if isempty(reports)
     fprintf('No reports found\n');
@@ -15,7 +18,7 @@ if isstruct(reports), % input is a structure (return from giveMeReports)
     
     noOfReports = length(reports);
     
-    % pre allocate
+    % pre allocate mat.file fields
     R(length(reports)).PsychHIDtime = 0;
     R(length(reports)).PupilTracked = 0;
     R(length(reports)).frameCount = 0;
@@ -31,12 +34,7 @@ if isstruct(reports), % input is a structure (return from giveMeReports)
     R(length(reports)).LeftGlint2CameraY = 0;
     
     c=0;
-%     for i=25:2:39,
-%         c=c+1;
-%         R(length(reports)).(FieldNames{c}) = 0;
-%     end
-
-   
+  
 end
 
 % run through all reports
@@ -69,18 +67,18 @@ for k=1:noOfReports,
     % Left camera scaling factor
     LeftCameraScaling = r(23)+r(24)*256;
 
-    r=uint16(r);
+%     r=uint16(r);
     
     % Assign parameters
     R(k).Digital_IO1 = r(5);
     R(k).Digital_IO2 = r(6);
-    R(k).LeftPupilWidth = r(25);
-    R(k).LeftPupilHeight = r(27);
-    R(k).LeftPupilCameraX = r(29);
-    R(k).LeftPupilCameraY = r(31);
-    R(k).LeftGlint1CameraX = r(33);
-    R(k).LeftGlint1CameraY = r(35);
-    R(k).LeftGlint2CameraX = r(37);
-    R(k).LeftGlint2CameraY = r(39);
+    R(k).LeftPupilWidth = r(25)+r(26)*256;
+    R(k).LeftPupilHeight = r(27)+r(28)*256;
+    R(k).LeftPupilCameraX = r(29)+r(30)*256;
+    R(k).LeftPupilCameraY = r(31)+r(32)*256;
+    R(k).LeftGlint1CameraX = r(33)+r(34)*256;
+    R(k).LeftGlint1CameraY = r(35)+r(36)*256;
+    R(k).LeftGlint2CameraX = r(37)+r(38)*256;
+    R(k).LeftGlint2CameraY = r(39)+r(40)*256;
 end
 
