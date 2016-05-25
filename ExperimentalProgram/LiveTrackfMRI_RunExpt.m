@@ -58,4 +58,4 @@ fprintf('- Data saved to %s\n', exp.saveFileName);
 % We clear here to fix some issues with report buffer. We don't really know
 % why clearing all should help us, but all other attempts have been
 % unsuccessful.
-clear all;
+%clear all;
