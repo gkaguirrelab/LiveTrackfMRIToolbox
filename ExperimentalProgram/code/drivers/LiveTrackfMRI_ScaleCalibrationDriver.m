@@ -102,5 +102,5 @@ end
 params.cameraUnitsToMmWidthMean = mean(params.cameraUnitsToMmWidth);
 params.cameraUnitsToMmHeightMean = mean(params.cameraUnitsToMmHeight);
 
-fprinf('>> Final conversion factor (camera units to mm - width): <strong>%.2f</strong>\n', params.cameraUnitsToMmWidthMean);
-fprinf('>> Final conversion factor (camera units to mm - height): <strong>%.2f</strong>\n', params.cameraUnitsToMmHeightMean);
+fprintf('>> Final conversion factor (camera units to mm - width): <strong>%.2f</strong>\n', params.cameraUnitsToMmWidthMean);
+fprintf('>> Final conversion factor (camera units to mm - height): <strong>%.2f</strong>\n', params.cameraUnitsToMmHeightMean);
