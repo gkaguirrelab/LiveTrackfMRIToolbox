@@ -94,6 +94,11 @@ closepreview(vid);
     % Make a copy of the report
     params.ReportRaw{ii} = Report;
     
+% cleanup
+delete(vid)
+close(gcf)
+
+    
     % Calculate the conversion factors for width and height independently.
     params.cameraUnitsToMmWidth(ii) = mean([params.ReportRaw{ii}.LeftPupilWidth]) / params.pupilDiameterMmGroundTruth(ii);
     params.cameraUnitsToMmHeight(ii) = mean([params.ReportRaw{ii}.LeftPupilHeight]) / params.pupilDiameterMmGroundTruth(ii);

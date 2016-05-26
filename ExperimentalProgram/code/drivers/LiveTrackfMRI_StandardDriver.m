@@ -86,5 +86,4 @@ params.Report = Report;
 
 % cleanup
 delete(vid)
-clear
 close(gcf)
