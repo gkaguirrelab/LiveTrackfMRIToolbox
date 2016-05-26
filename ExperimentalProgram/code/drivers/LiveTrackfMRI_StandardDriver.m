@@ -59,7 +59,7 @@ while log
     end
     if TimerFlag == true
         tic
-        while toc < expt.recTimeInSecs * 1.5 %buffer required to record the exact amount of seconds
+        while toc < expt.recTimeInSecs * 1.1 %buffer required to record the exact amount of seconds
             display('LiveTrack: recording...');
             pause(1);
             PsychHID('ReceiveReports',deviceNumber);
