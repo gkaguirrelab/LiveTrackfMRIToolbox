@@ -12,3 +12,9 @@ fprintf('\n Press spacebar to end LiveTrack_preview.');
 pause;
 stoppreview(vid);
 closepreview(vid);
+
+
+% cleanup
+delete(vid)
+clear
+close(gcf)
