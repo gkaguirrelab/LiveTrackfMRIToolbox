@@ -2,7 +2,7 @@
 [~, userID] = system('whoami');
 userID = strtrim(userID);
 switch userID
-    case {'melanopsin' 'pupillab'}
+    case {'melanopsin' 'pupillab', 'MELA'}
         dropboxBaseDir = ['/Users/' userID '/Dropbox (Aguirre-Brainard Lab)/'];
         dataPath = ['/Users/' userID '/Dropbox (Aguirre-Brainard Lab)/MELA_data/'];
     case 'connectome'
