@@ -80,14 +80,14 @@ end
 % stop video e data recording
 LiveTrackHIDcomm(deviceNumber,'end');
 fprintf ('\n LiveTrack:saving data... ');
-pause(2);
+pause(5);
 stop(vid);
 stoppreview(vid);
 closepreview(vid);
 
 params.Report = Report;
 
-fprintf ('\done.');
+fprintf ('\n done.');
 % cleanup
 delete(vid)
 close(gcf)
