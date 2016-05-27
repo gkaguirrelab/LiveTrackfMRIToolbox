@@ -11,7 +11,6 @@ vidName = fullfile(expt.subjectDataDir, [expt.obsIDAndRun '.avi']);
 %% find  Livetrack
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
-LiveTrackHIDcomm(deviceNumber,'end'); %stop tracking
 % video recording
 vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
 src = getselectedsource(vid);
@@ -21,7 +20,6 @@ fprintf('\n Press spacebar to initialize LiveTrack.');
 pause;
 %video recording
 vid.FramesPerTrigger = Inf;
-frameRate = 30; %default fps
 vid.LoggingMode = 'disk';
 diskLogger = VideoWriter(vidName, 'Motion JPEG AVI');
 vid.DiskLogger = diskLogger;
@@ -52,17 +50,20 @@ while log
     ii = ii+1;
     if Report(end).Digital_IO1 == 1 && firstTTL
         trigger(vid);
+        tic
         firstTTL = false;
         fprintf('\n TTL detected! \n');
         %start timer
         TimerFlag = true;
     end
     if TimerFlag == true
-        tic
-        while toc < expt.recTimeInSecs * 1.1 %buffer required to record the exact amount of seconds
-            display('LiveTrack: recording...');
-            pause(1);
+        
+        
+        while toc < expt.recTimeInSecs + 5 %safety buffer
             PsychHID('ReceiveReports',deviceNumber);
+            pause(1)
+            display('LiveTrack: recording... ');
+            toc
             [reports]=PsychHID('GiveMeReports',deviceNumber);
             buffer = [buffer reports];
             R = HID2struct(buffer);
@@ -72,18 +73,21 @@ while log
             ii = ii+1;
         end
         display('LiveTrack:stopping...');
+        pause (3)
         log = false;
     end
 end
 % stop video e data recording
 LiveTrackHIDcomm(deviceNumber,'end');
-pause(0.5);
+fprintf ('\n LiveTrack:saving data... ');
+pause(2);
 stop(vid);
 stoppreview(vid);
 closepreview(vid);
 
 params.Report = Report;
 
+fprintf ('\done.');
 % cleanup
 delete(vid)
 close(gcf)
