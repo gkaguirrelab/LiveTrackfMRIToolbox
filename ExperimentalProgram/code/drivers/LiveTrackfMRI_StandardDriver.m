@@ -57,7 +57,7 @@ while log
     if TimerFlag == true
         while mglGetSecs-t0 < expt.recTimeInSecs + 5 %safety buffer
             PsychHID('ReceiveReports',deviceNumber);
-            pause(1);
+            mglWaitSecs(1);
             %fprintf('\nLiveTrack: recording... ');
             [reports]=PsychHID('GiveMeReports',deviceNumber);
             buffer = [buffer reports];
@@ -67,7 +67,7 @@ while log
             [reports] = [0];
         end
         fprintf('\nLiveTrack:stopping...');
-        pause(3);
+        mglWaitSecs(3);
         log = false;
     end
 end
@@ -75,7 +75,7 @@ tEnd = mglGetSecs;
 % stop video e data recording
 LiveTrackHIDcomm(deviceNumber,'end');
 fprintf ('\nLiveTrack:saving data... ');
-pause(5);
+mglWaitSecs(5);
 stop(vid);
 stoppreview(vid);
 closepreview(vid);
