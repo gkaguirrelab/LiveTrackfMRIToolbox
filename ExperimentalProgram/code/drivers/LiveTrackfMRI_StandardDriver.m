@@ -83,6 +83,7 @@ closepreview(vid);
 params.Report = Report;
 params.tStartBlock = t0;
 params.tEndBlock = tEnd;
+fprintf('\n>> Total duration: <strong>%.2f</strong>', params.tEndBlock-params.tStartBlock);
 
 fprintf ('done.\n');
 % cleanup
