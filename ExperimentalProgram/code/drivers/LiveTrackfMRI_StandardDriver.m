@@ -34,6 +34,7 @@ firstTTL = true;
 log = true;
 TimerFlag = false;
 
+bufferTime = 5;
 fprintf('\n LiveTrack: Listening...');
 
 %% logging
@@ -55,7 +56,7 @@ while log
         TimerFlag = true;
     end
     if TimerFlag == true
-        while mglGetSecs-t0 < expt.recTimeInSecs + 5 %safety buffer
+        while mglGetSecs-t0 < expt.recTimeInSecs+bufferTime %safety buffer
             PsychHID('ReceiveReports',deviceNumber);
             mglWaitSecs(1);
             %fprintf('\nLiveTrack: recording... ');
@@ -83,7 +84,7 @@ closepreview(vid);
 params.Report = Report;
 params.tStartBlock = t0;
 params.tEndBlock = tEnd;
-fprintf('\n>> Total duration: <strong>%.2f</strong>', params.tEndBlock-params.tStartBlock);
+fprintf('\n>> Total duration: <strong>%.2f</strong> (called for: %.2f)', params.tEndBlock-params.tStartBlock, expt.recTimeInSecs+bufferTime);
 
 fprintf ('done.\n');
 % cleanup
