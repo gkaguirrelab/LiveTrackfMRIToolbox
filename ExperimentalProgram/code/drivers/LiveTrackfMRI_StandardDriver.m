@@ -31,7 +31,6 @@ PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
 LiveTrackHIDcomm(deviceNumber,'begin');
 start(vid); %initialize video ob
 firstTTL = true;
-ii = 1;
 log = true;
 TimerFlag = false;
 
@@ -47,47 +46,45 @@ while log
     Report = R;
     R = 0;
     [reports] = [0];
-    ii = ii+1;
     if Report(end).Digital_IO1 == 1 && firstTTL
         trigger(vid);
-        tic
+        t0 = mglGetSecs;
         firstTTL = false;
-        fprintf('\n TTL detected! \n');
+        fprintf('\n First t received! \n');
         %start timer
         TimerFlag = true;
     end
     if TimerFlag == true
-        
-        
-        while toc < expt.recTimeInSecs + 5 %safety buffer
+        while mglGetSecs-t0 < expt.recTimeInSecs + 5 %safety buffer
             PsychHID('ReceiveReports',deviceNumber);
-            pause(1)
-            display('LiveTrack: recording... ');
-            toc
+            pause(1);
+            %fprintf('\nLiveTrack: recording... ');
             [reports]=PsychHID('GiveMeReports',deviceNumber);
             buffer = [buffer reports];
             R = HID2struct(buffer);
             Report = R;
             R = 0;
             [reports] = [0];
-            ii = ii+1;
         end
-        display('LiveTrack:stopping...');
-        pause (3)
+        fprintf('\nLiveTrack:stopping...');
+        pause(3);
         log = false;
     end
 end
+tEnd = mglGetSecs;
 % stop video e data recording
 LiveTrackHIDcomm(deviceNumber,'end');
-fprintf ('\n LiveTrack:saving data... ');
+fprintf ('\nLiveTrack:saving data... ');
 pause(5);
 stop(vid);
 stoppreview(vid);
 closepreview(vid);
 
 params.Report = Report;
+params.tStartBlock = t0;
+params.tEndBlock = tEnd;
 
-fprintf ('\n done.');
+fprintf ('done.\n');
 % cleanup
-delete(vid)
-close(gcf)
+delete(vid);
+close(gcf);
