@@ -68,7 +68,10 @@ TimerFlag = false;
 % notify listening mode (the camera is waiting for a TTL input)
 fprintf('\n LiveTrack: Listening...');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%INSERT A PLEASANT SOUND HERE%%%%%%%%%%%%%%%%%%%%
+% Play a sound
+t = linspace(0, 1, 10000);
+y = sin(440*2*pi*t);
+sound(y, 20000);
 
 %% Data and video collection
 % preallocate the buffer
