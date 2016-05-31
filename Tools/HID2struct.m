@@ -1,7 +1,7 @@
 function R = HID2struct(reports)
 % HID2struct transforms report packets with raw data into a
 % structure array.
-% This function follows the section 'Using the ?HID? interface' on the
+% This function follows the section 'Using the HID interface' on the
 % LiveTrack User Manual (p.23).
 
 
