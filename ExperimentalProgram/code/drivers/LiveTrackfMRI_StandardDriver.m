@@ -106,11 +106,11 @@ while log
     % Record video after first TTL
     if TimerFlag == true
         tic
-        while toc < expt.recTimeInSecs + bufferTime % We record some extra seconds here.
+        while toc < expt.recTimeInSecs + postBufferTime % We record some extra seconds here.
             pause(1);
             toc % Elapsed time is displayed
             PsychHID('ReceiveReports', deviceNumber);
-            [reports]=PsychHID('GiveMeReports',d eviceNumber);
+            [reports]=PsychHID('GiveMeReports', deviceNumber);
             buffer = [buffer reports];
             R = HID2struct(buffer);
             Report = R;
