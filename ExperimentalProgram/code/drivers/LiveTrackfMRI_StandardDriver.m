@@ -30,7 +30,7 @@ vidName = fullfile(expt.subjectDataDir, [expt.obsIDAndRun '.avi']);
 % find  LivetrackAV for data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 
-% ind  LivetrackAV for video recording
+% find  LivetrackAV for video recording
 vid = videoinput('macvideo', 1, 'YUY2_320x240');
 src = getselectedsource(vid);
 
@@ -67,6 +67,8 @@ TimerFlag = false;
 
 % notify listening mode (the camera is waiting for a TTL input)
 fprintf('\n LiveTrack: Listening...');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%INSERT A PLEASANT SOUND HERE%%%%%%%%%%%%%%%%%%%%
 
 %% Data and video collection
 % preallocate the buffer
