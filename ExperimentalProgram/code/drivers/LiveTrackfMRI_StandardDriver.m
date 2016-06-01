@@ -45,9 +45,9 @@ pause;
 % Video recording settings
 vid.FramesPerTrigger = Inf;
 vid.LoggingMode = 'disk';
-diskLogger = VideoWriter(vidName, 'Motion JPEG AVI');
+diskLogger = VideoWriter(vidName, 'MPEG-4');
 diskLogger.FrameRate = 10;  % Note that this is the default LiveTrack Camera interface frameRate.
-diskLogger.Quality = 75;
+diskLogger.Quality = 100;
 vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual')
 
