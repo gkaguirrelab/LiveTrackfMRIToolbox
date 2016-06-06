@@ -102,26 +102,26 @@ for k=1:noOfReports,
     % check flag
     Ch01_Flag = dec2bin(r(17)+r(18)*256,16);
     if strcmp(Ch01_Flag(11:12),'01'), % set to look for 1 glint (LiveTrack AV)
-        R(k).PupilTracked = strcmp(Ch01_Flag(13:16),'0111');
+        R(k).PupilTracked_Ch01 = strcmp(Ch01_Flag(13:16),'0111');
     elseif strcmp(Ch01_Flag(11:12),'10'), % set to look for 2 glints (LiveTrack FM)
-        R(k).PupilTracked = strcmp(Ch01_Flag(13:16),'1111');
+        R(k).PupilTracked_Ch01 = strcmp(Ch01_Flag(13:16),'1111');
     else
         if strcmp(Ch01_Flag(16),'1'), % tracking is enabled
             error('looking for an undefined amount of glints!');
         else
-            R(k).PupilTracked = false;
+            R(k).PupilTracked_Ch01 = false;
         end
     end
     Ch02_Flag = dec2bin(r(41)+r(42)*256,16);
     if strcmp(Ch02_Flag(11:12),'01'), % set to look for 1 glint (LiveTrack AV)
-        R(k).S2Tracked = strcmp(Ch02_Flag(13:16),'0111');
+        R(k).PupilTracked_Ch02 = strcmp(Ch02_Flag(13:16),'0111');
     elseif strcmp(Ch02_Flag(11:12),'10'), % set to look for 2 glints (LiveTrack FM)
-        R(k).S2Tracked = strcmp(Ch02_Flag(13:16),'1111');
+        R(k).PupilTracked_Ch02 = strcmp(Ch02_Flag(13:16),'1111');
     else
         if strcmp(Ch02_Flag(16),'1'), % tracking is enabled
             error('looking for an undefined amount of glints!');
         else
-            R(k).S2Tracked = false;
+            R(k).PupilTracked_Ch02 = false;
         end
     end
     
