@@ -129,8 +129,8 @@ for ii = 1:length(params.pupilDiameterMmGroundTruth)
     
     
     % Calculate the conversion factors for width and height independently.
-    params.cameraUnitsToMmWidth(ii) = mean([params.ReportRaw{ii}.LeftPupilWidth]) / params.pupilDiameterMmGroundTruth(ii);
-    params.cameraUnitsToMmHeight(ii) = mean([params.ReportRaw{ii}.LeftPupilHeight]) / params.pupilDiameterMmGroundTruth(ii);
+    params.cameraUnitsToMmWidth(ii) = mean([params.ReportRaw{ii}.PupilWidth_Ch01]) / params.pupilDiameterMmGroundTruth(ii);
+    params.cameraUnitsToMmHeight(ii) = mean([params.ReportRaw{ii}.PupilHeight_Ch01]) / params.pupilDiameterMmGroundTruth(ii);
 end
 
 params.cameraUnitsToMmWidthMean = mean(params.cameraUnitsToMmWidth);
