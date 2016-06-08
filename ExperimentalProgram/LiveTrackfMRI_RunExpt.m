@@ -36,7 +36,14 @@ end
 exp.configFileDir = fullfile(exp.configFileDir, 'protocols');
 
 %% Set up data directory for this subject
-[exp.subject,exp.subjectDataDir,exp.saveFileName] = LiveTrackfMRI_GetSubjectDataDirMR(exp.protocolDataDir,exp.protocolList,exp.protocolIndex);
+%
+if strcmp(exp.protocolList(exp.protocolIndex).driver, 'LiveTrackfMRI_ScaleCalibrationDriver')
+    scaleCalibrationFlag = true;
+else
+    scaleCalibrationFlag = false;
+end
+[exp.subject,exp.subjectDataDir,exp.saveFileName] = LiveTrackfMRI_GetSubjectDataDirMR(exp.protocolDataDir,...
+    exp.protocolList,exp.protocolIndex,scaleCalibrationFlag);
 [~, exp.obsIDAndRun] = fileparts(exp.saveFileName);
 
 %% Store the date/time when the experiment starts.
