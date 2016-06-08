@@ -7,16 +7,16 @@ params.NTRsExpected = 560; % #
 params.LiveTrackSamplingRate = 60; % Hz
 params.ResamplingFineFreq = 1000; % 1 msec
 params.TimeVectorFine = 0:(1/params.ResamplingFineFreq):((params.NTRsExpected*params.TRDurSecs)-(1/params.ResamplingFineFreq));
-params.BlinkWindowSample = -10:10; % Samples surrounding the blink event 
+params.BlinkWindowSample = -10:10; % Samples surrounding the blink event
 
 exptPath = '/Users/mspits/Dropbox (Aguirre-Brainard Lab)/MELA_data/MelanopsinMRMaxLMSCRF/HERO_asb1/060816/';
 for i = 1
     %%
     %%%%% EYE TRACKING DATA %%%%%
-    % Load the eye tracking data 
+    % Load the eye tracking data
     Data_LiveTrack = load(fullfile(exptPath, 'EyeTrackingFiles', ['HERO_asb1-MelanopsinMRMaxLMSCRF-' num2str(i, '%02.f') '.mat']));
     
-        % Find cases in which the TTL pulse signal was split over the two
+    % Find cases in which the TTL pulse signal was split over the two
     % samples, and remove the second sample.
     Data_LiveTrack_TTLPulses_raw = [Data_LiveTrack.params.Report.Digital_IO1];
     tmpIdx = strfind(Data_LiveTrack_TTLPulses_raw, [1 1]);
@@ -35,7 +35,7 @@ for i = 1
         Data_LiveTrack_IsTracked = [Data_LiveTrack_IsTracked Data_LiveTrack.params.Report(rr).PupilTracked_Ch01 ...
             Data_LiveTrack.params.Report(rr).PupilTracked_Ch02];
     end
-
+    
     % Now, we reconstruct the time vector of the data.
     TTLPulseIndices = find(Data_LiveTrack_TTLPulses); FirstTTLPulse = TTLPulseIndices(1);
     TimeVectorLinear = zeros(1, size(Data_LiveTrack_TTLPulses, 2));
@@ -55,7 +55,7 @@ for i = 1
     
     %%
     %%%%% Stimulus data %%%%%
-    % Load the stimulus data 
+    % Load the stimulus data
     Data_Stimulus = load(fullfile(exptPath, 'MatFiles', ...
         ['HERO_asb1-MelanopsinMRMaxLMSCRF-' num2str(i, '%02.f') '.mat']));
     
@@ -134,21 +134,43 @@ for i = 1
         Data_LiveTrack_BlinkIdx = [Data_LiveTrack_BlinkIdx find(~Data_LiveTrack_IsTracked_FineMasterTime)+params.BlinkWindowSample(rr)];
     end
     Data_LiveTrack_BlinkIdx = unique(Data_LiveTrack_BlinkIdx);
-Data_LiveTrack_PupilDiameter_FineMasterTime(Data_LiveTrack_BlinkIdx) = NaN;
-
+    Data_LiveTrack_PupilDiameter_FineMasterTime(Data_LiveTrack_BlinkIdx) = NaN;
+    
     % Interpolate the elements
-    Data_LiveTrack_PupilDiameter_FineMasterTime(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)) = interp1(params.TimeVectorFine(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), Data_LiveTrack_PupilDiameter_FineMasterTime(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), params.TimeVectorFine(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)));
-
+    %Data_LiveTrack_PupilDiameter_FineMasterTime(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)) = interp1(params.TimeVectorFine(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), Data_LiveTrack_PupilDiameter_FineMasterTime(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), params.TimeVectorFine(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)));
+    
+    
+    
     %% Low-pass filtering the pupil data
-    % For each 
-    Fs = params.ResamplingFineFreq;
-    NSamps = length(Data_LiveTrack_PupilDiameter_FineMasterTime);
-    y_fft = abs(fft((Data_LiveTrack_PupilDiameter_FineMasterTime-mean(Data_LiveTrack_PupilDiameter_FineMasterTime))./(mean(Data_LiveTrack_PupilDiameter_FineMasterTime))));            %Retain Magnitude
-    y_fft = y_fft(1:NSamps/2);      %Discard Half of Points
-    f = Fs*(0:NSamps/2-1)/NSamps;   %Prepare freq data for plot
-    plot(f, y_fft);
-    xlim([0 0.1]);
-    xlabel('Frequency [Hz]');
+    % For each
+    %     Fs = params.ResamplingFineFreq;
+    %     NSamps = length(Data_LiveTrack_PupilDiameter_FineMasterTime);
+    %     y_fft = abs(fft((Data_LiveTrack_PupilDiameter_FineMasterTime-mean(Data_LiveTrack_PupilDiameter_FineMasterTime))./(mean(Data_LiveTrack_PupilDiameter_FineMasterTime))));            %Retain Magnitude
+    %     y_fft = y_fft(1:NSamps/2);      %Discard Half of Points
+    %     f = Fs*(0:NSamps/2-1)/NSamps;   %Prepare freq data for plot
+    %     plot(f, y_fft);
+    %     xlim([0 0.1]);
+    %     xlabel('Frequency [Hz]');
+    
+    %%
+    Data_LiveTrack_PupilDiameter_FineMasterTime(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)) = interp1(params.TimeVectorFine(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), Data_LiveTrack_PupilDiameter_FineMasterTime(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), params.TimeVectorFine(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)));
+    tmp = (Data_LiveTrack_PupilDiameter_FineMasterTime-nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime))./(nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime));
+    cutOffFreqHz = 0.001;
+    [b,a] = butter(3,cutOffFreqHz/(params.ResamplingFineFreq/2),'high');
+    %fvtool(b, a);
+    outputData = filter(b,a,tmp);
+    subplot(3, 1, 1);
+    plot(tmp);
+    ylim([-0.7 0.7]);
+    title({['Cut off: ' num2str(cutOffFreqHz) ' Hz'] 'Unfiltered'});
+    subplot(3, 1, 2);
+    plot(outputData)
+    ylim([-0.7 0.7]);
+    title('Filtered');
+    subplot(3, 1, 3);
+    plot(tmp-outputData);
+    ylim([-0.7 0.7]);
+    title('Residual');
 end
 
 
