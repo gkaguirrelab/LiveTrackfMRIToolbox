@@ -1,3 +1,14 @@
+%% Identify the user
+if isunix
+    [~, user_name] = system('whoami') ; % exists on every unix that I know of
+    % on my mac, isunix == 1
+elseif ispc
+    [~, user_name] = system('echo %USERDOMAIN%\%USERNAME%') ; % Not as familiar with windows,
+    % found it on the net elsewhere, you might want to verify
+end
+
+% Path to local Dropbox
+localDropboxDir = ['/Users/',strtrim(user_name),'/Dropbox (Aguirre-Brainard Lab/'] ;
 
 %% HERO_asb1
 clearvars;
@@ -63,8 +74,6 @@ protocol = 'MelanopsinMRMaxMelCRF';
 acquisitionFreq = 60;
 NRuns = 4;
 
-
-
 %% Set some parameters
 params.TRDurSecs = 0.8; % secs
 params.NTRsExpected = 560; % #
@@ -77,8 +86,8 @@ params.BlinkWindowSample = -10:10; % Samples surrounding the blink event
 fprintf('\n');
 fprintf('= Analyzing <strong>%s</strong> - <strong>%s</strong> - <strong>%s</strong>\n', protocol, subjectID, dateID);
 
-exptPath = fullfile('/Users/mspits/Dropbox (Aguirre-Brainard Lab)/MELA_data/', protocol, subjectID, dateID);
-outPath = fullfile('/Users/mspits/Dropbox (Aguirre-Brainard Lab)/MELA_analysis/', protocol, subjectID);
+exptPath = fullfile(localDropbopxDir, 'MELA_data', protocol, subjectID, dateID);
+outPath = fullfile(localDropbopxDir, 'MELA_analysis', protocol, subjectID);
 if ~isdir(outPath)
     mkdir(outPath);
 end
