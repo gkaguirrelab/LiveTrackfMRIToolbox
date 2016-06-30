@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<DEVICE_TYPE_00> 
+    	<ETP_CONFIG>
+    	</ETP_CONFIG>
+	<SYSTEM>
+		<Entry DISPLAY_FRAMERATE="10"/> # (10) Frame Rate the UVC video stream
+	</SYSTEM>
+</DEVICE_TYPE_00>
+
+<DEVICE_TYPE_02> # Livetrack FM - embedded camera
+	<ETP_CONFIG>
+ 		<Entry CAMERA_TYPE="CAMERA_MICRON9V024"/>
+ 		<Entry VIDEO_FORMAT="VIDEO_FORMAT_720_240p"/>
+		<Entry DISPLAY_FORMAT="DISPLAY_FORMAT_720_240"/> # DISPLAY_FORMAT_320_240, DISPLAY_FORMAT_720_240 or DISPLAY_FORMAT_720_480
+		<Entry DISPLAY_CODEC="DISPLAY_CODEC_YUY2"/> 	# DISPLAY_CODEC_I420, DISPLAY_CODEC_Y800 or DISPLAY_CODEC_YUY2
+		<Entry SubImageSizeX="320"/> 			# (320) width of box to look for pupil location 
+		<Entry SubImageSizeY="240"/> 			# (240) height of box to look for pupil location
+		<Entry Glints="2"/>				# (2) number of glints to search for
+        	<Entry MinGlint="2"/>				# (2) minimum amount of pixels for glint search
+        	<Entry MaxGlint="15"/>				# (15) maximum amount of pixels for glint search, also effects to glint exclusion area 
+        	<Entry GlintThreshold_W="6"/> 			# (6) width of box for glint search
+        	<Entry GlintThreshold_T="550"/> 		# (550) threshold for glint in search box
+		<Entry PupilSizeEstimate="64"/> 		# (64) side length of the bounding box the pupil must fit within
+        	<Entry MinPupil="100"/> 			# (100) minimum allowed amount of pixels inside pupil fit
+        	<Entry MaxPupil="2800"/> 			# (2800) maximum allowed amount of pixels inside pupil fit
+        	<Entry PupilShape="2.0"/>			# (2.0) maximum major-to-minor axis ratio of ellipse fit to allow
+		<Entry MaxEdgePoints="80"/> 			# (80) amount of points to add to pupil fit
+    </ETP_CONFIG>
+</DEVICE_TYPE_02>
+
+<DEVICE_TYPE_03> # Livetrack AP for Diagnosys ganzfeld
+    <ETP_CONFIG>
+		<Entry CAMERA_TYPE="CAMERA_ITU656_DECODER"/>
+ 		<Entry VIDEO_FORMAT="VIDEO_FORMAT_720_240i"/>
+		<Entry DISPLAY_FORMAT="DISPLAY_FORMAT_720_240"/> # DISPLAY_FORMAT_320_240, DISPLAY_FORMAT_720_240 or DISPLAY_FORMAT_720_480
+        	<Entry DISPLAY_CODEC="DISPLAY_CODEC_I420"/> 	# DISPLAY_CODEC_I420, DISPLAY_CODEC_Y800 or DISPLAY_CODEC_YUY2
+		<Entry VIDEO_STANDARD="VIDEO_STANDARD_NTSC"/> 	# "VIDEO_STANDARD_PAL" for PAL camera type or "VIDEO_STANDARD_NTSC" for NTSC camera type
+		<Entry PEDESTAL="ON"/>
+		<Entry SubImageSizeX="160"/> 			# (160) width of box to look for pupil location 
+		<Entry SubImageSizeY="120"/> 			# (120) height of box to look for pupil location
+		<Entry Glints="2"/> 				# (2) number of glints to search for
+        	<Entry MinGlint="2"/> 				# (2) minimum amount of pixels for glint search
+        	<Entry MaxGlint="30"/> 				# (30) maximum amount of pixels for glint search, also effects to glint exclusion area - 20 is big enough but set to 30 to exclude more area around glint
+        	<Entry GlintThreshold_W="10"/> 			# (10) width of box for glint search
+        	<Entry GlintThreshold_T="450"/> 		# (450) threshold for glint in search box
+		<Entry PupilSizeEstimate="64"/> 		# (64) side length of the bounding box the pupil must fit within
+        	<Entry MinPupil="80"/> 				# (80) minimum allowed amount of pixels inside pupil fit
+        	<Entry MaxPupil="1500"/> 			# (1500) maximum allowed amount of pixels inside pupil fit
+        	<Entry PupilShape="2.0"/>			# (2.0) maximum major-to-minor axis ratio of ellipse fit to allow
+		<Entry MaxEdgePoints="80"/> 			# (80) amount of points to add to pupil fit
+    </ETP_CONFIG>
+</DEVICE_TYPE_03>
+
+<DEVICE_TYPE_04> # Livetrack AV - for MRC camera
+    <ETP_CONFIG>
+		<Entry CAMERA_TYPE="CAMERA_ITU656_DECODER"/>
+ 		<Entry VIDEO_FORMAT="VIDEO_FORMAT_720_240p"/>
+		<Entry DISPLAY_FORMAT="DISPLAY_FORMAT_320_240"/> # DISPLAY_FORMAT_320_240, DISPLAY_FORMAT_720_240 or DISPLAY_FORMAT_720_480
+        	<Entry DISPLAY_CODEC="DISPLAY_CODEC_YUY2"/> 	# DISPLAY_CODEC_I420, DISPLAY_CODEC_Y800 or DISPLAY_CODEC_YUY2
+		<Entry VIDEO_STANDARD="VIDEO_STANDARD_NTSC"/> 	# "VIDEO_STANDARD_PAL" for PAL camera type or "VIDEO_STANDARD_NTSC" for NTSC camera type
+		<Entry PEDESTAL="ON"/>
+		<Entry SubImageSizeX="320"/> 			# (320) width of box to look for pupil location 
+		<Entry SubImageSizeY="240"/> 			# (240) height of box to look for pupil location
+		<Entry Glints="1"/>				# (1) number of glints to search for
+        	<Entry MinGlint="4"/>				# (4) minimum amount of pixels for glint search
+        	<Entry MaxGlint="32"/>				# (32) maximum amount of pixels for glint search, also effects to glint exclusion area 
+        	<Entry GlintThreshold_W="20"/> 			# (20) width of box for glint search
+        	<Entry GlintThreshold_T="500"/> 		# (500) threshold for glint in search box
+        	<Entry PupilSizeEstimate="96"/> 		# (96) side length of the bounding box the pupil must fit within
+        	<Entry MinPupil="160"/> 			# (160) minimum allowed amount of pixels inside pupil fit
+        	<Entry MaxPupil="4000"/> 			# (4000) maximum allowed amount of pixels inside pupil fit
+        	<Entry PupilShape="2.0"/>			# (2.0) maximum major-to-minor axis ratio of ellipse fit to allow
+		<Entry MaxEdgePoints="80"/> 			# (80) amount of points to add to pupil fit
+	</ETP_CONFIG>
+</DEVICE_TYPE_04>
