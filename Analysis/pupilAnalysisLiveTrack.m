@@ -206,7 +206,7 @@ for sn = 1:NSubjects
             Data_LiveTrack_PupilDiameter_FineMasterTime_DC = nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime);
             
             Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered = (Data_LiveTrack_PupilDiameter_FineMasterTime-nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime))./(nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime));
-
+            
             
             % Low-pass filter the pupil data
             % Set up filter properties
@@ -278,7 +278,7 @@ for sn = 1:NSubjects
             for ii = 1:NContrastLevels
                 theIdx = find(Data_Stimulus.params.theContrastRelMaxIndices == ii);
                 Data_Per_ContrastLevel{ii, rrun} = [Data_Per_Segment{theIdx}];
-                Data_Per_ContrastLevel_Mean{ii}(:, rrun) = mean(Data_Per_ContrastLevel{ii, rrun}, 2);
+                Data_Per_ContrastLevel_Mean{ii}(:, rrun) = nanmean(Data_Per_ContrastLevel{ii, rrun}, 2);
             end
             rrun = rrun+1;
         end
@@ -305,7 +305,7 @@ for sn = 1:NSubjects
     timeSeriesFig = figure;
     timeVector = (1:(durIdx+1))/1000;
     for ii = 1:NContrastLevels
-        Data_Per_ContrastLevel_xrun_Mean{ii} = mean(Data_Per_ContrastLevel_Mean{ii}, 2);
+        Data_Per_ContrastLevel_xrun_Mean{ii} = nanmean(Data_Per_ContrastLevel_Mean{ii}, 2);
         Data_Per_ContrastLevel_xrun_SEM{ii} = std(Data_Per_ContrastLevel_Mean{ii}, [], 2)/sqrt(NRunsTotal);
         
         hold on;
@@ -332,7 +332,6 @@ for sn = 1:NSubjects
     set(timeSeriesFig, 'PaperPosition', [0 0 4 4]);
     set(timeSeriesFig, 'PaperSize', [4 4]);
     saveas(timeSeriesFig, fullfile(outPath, [subjectID '-' protocol '_TimeSeries.png']), 'png');
-    close(timeSeriesFig);
     
     % Plot the CRF
     NSecondsStim = 3;
@@ -362,8 +361,11 @@ for sn = 1:NSubjects
     set(crfFig, 'PaperPosition', [0 0 4 4]);
     set(crfFig, 'PaperSize', [4 4]);
     saveas(crfFig, fullfile(outPath, [subjectID '-' protocol '_CRF.png']), 'png');
-    close(crfFig);
+    
     
     csvwrite(fullfile(outPath, [subjectID '-' protocol  '_CRF.csv']), Data_Per_ContrastLevel_xrun_MeanMin');
     csvwrite(fullfile(outPath, [subjectID '-' protocol  '_MeanTimeSeries.csv']), [timeVector' Data_Per_ContrastLevel_xrun_Mean{:}]);
+    close(crfFig);
+    close(timeSeriesFig);
+    
 end
