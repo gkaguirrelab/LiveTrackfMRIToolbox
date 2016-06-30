@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<DEVICE_TYPE_00>
+    <ETP_CONFIG>
+    </ETP_CONFIG>
+	<SYSTEM>
+		<Entry USB_HID="ON"/> 	# (ON) 	enable or disable USB HID data transfer protocol
+		<Entry USB_CDC="OFF"/>	# (OFF) enable or disable USB CDC virtual serial port data transfer protocol
+		<Entry USB_UVC="ON"/>	# (ON) 	enable or disable USB Video Class (UVC) video transfer protocol		
+		<Entry HID_COORDINATE_SYSTEM="COORDINATE_RAW"/> # Use "COORDINATE_RAW" or "COORDINATE_CALIBRATED" for automatic data streaming of raw or calibrated data.  Use "COORDINATE_NONE" to disable
+	</SYSTEM>
+</DEVICE_TYPE_00>
+<LIVETRACK_CONFIG>
+    <TRACKING>
+        # Tracked ellipse overlay on pupil and glints
+        <Entry VIDEO_OVERLAY="62" /> 	# (62) 0 - 63, OFF=0, ON=62, UVC slider "BackLight Comp" can also set this parameter
+
+        # Default horizontal offset of the analysed eye image (LiveTrack AP model only)
+        <Entry IPD="0" /> 		# UVC slider "Zoom" can also set this the parameter
+
+        # Enable tracking left eye by default (LiveTrack FM and AP models only)
+        <Entry TRACK_LEFT_EYE="ON"/>  	# UVC slider "Focus" can also set this parameter
+
+        # Enable tracking right eye by default (LiveTrack FM and AP models only)
+        <Entry TRACK_RIGHT_EYE="ON"/>	# UVC slider "Focus" can also set this parameter
+	</TRACKING>
+	
+# Default contents of the calibration matrices.
+# Replace the following when a calibration has been performed.
+    <DEFAULT_CALIBRATION>
+		<LEFT_EYE>
+			 <Entry A11="-2.919246444803344e+15" />
+			 <Entry A12="7.018943162941563e+13" />
+			 <Entry A13="-1.598589031725037e+14" />
+			 <Entry A14="3.269469762188474e+14" />
+			 <Entry A21="2.089800231371030e+14" />
+			 <Entry A22="2.684058946760330e+15" />
+			 <Entry A23="4.379486245704038e+14" />
+			 <Entry A24="-9.419698422864538e+13" />
+			 <Entry A31="1.304294904386833e+15" />
+			 <Entry A32="-1.326297387626762e+15" />
+			 <Entry A33="1.855940866399211e+14" />
+			 <Entry A34="1.126825202180877e+15" />
+			 <Entry A41="2.609400941628260e+12" />
+			 <Entry A42="-2.654266828620647e+12" />
+			 <Entry A43="3.730264149784392e+11" />
+			 <Entry A44="2.251823905124515e+12" />
+
+			 
+			 <Entry RPC="1.387624860285202e+02" />
+			 <Entry X_SINGLE_GLINT_OFFSET="0"/>
+			 <Entry Y_SINGLE_GLINT_OFFSET="0"/>
+		</LEFT_EYE>
+		<RIGHT_EYE>
+			 <Entry A11="-2.919246444803344e+15" />
+			 <Entry A12="7.018943162941563e+13" />
+			 <Entry A13="-1.598589031725037e+14" />
+			 <Entry A14="3.269469762188474e+14" />
+			 <Entry A21="2.089800231371030e+14" />
+			 <Entry A22="2.684058946760330e+15" />
+			 <Entry A23="4.379486245704038e+14" />
+			 <Entry A24="-9.419698422864538e+13" />
+			 <Entry A31="1.304294904386833e+15" />
+			 <Entry A32="-1.326297387626762e+15" />
+			 <Entry A33="1.855940866399211e+14" />
+			 <Entry A34="1.126825202180877e+15" />
+			 <Entry A41="2.609400941628260e+12" />
+			 <Entry A42="-2.654266828620647e+12" />
+			 <Entry A43="3.730264149784392e+11" />
+			 <Entry A44="2.251823905124515e+12" />
+
+			 
+			 <Entry RPC="1.387624860285202e+02" />
+			 <Entry X_SINGLE_GLINT_OFFSET="0"/>
+			 <Entry Y_SINGLE_GLINT_OFFSET="0"/>
+		</RIGHT_EYE>
+    </DEFAULT_CALIBRATION>
+</LIVETRACK_CONFIG>
+
+ 
