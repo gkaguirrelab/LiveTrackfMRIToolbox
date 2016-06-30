@@ -202,7 +202,11 @@ for sn = 1:NSubjects
             
             % Interpolate the elements
             Data_LiveTrack_PupilDiameter_FineMasterTime(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)) = interp1(params.TimeVectorFine(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), Data_LiveTrack_PupilDiameter_FineMasterTime(~isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)), params.TimeVectorFine(isnan(Data_LiveTrack_PupilDiameter_FineMasterTime)));
+            % Get the DC
+            Data_LiveTrack_PupilDiameter_FineMasterTime_DC = nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime);
+            
             Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered = (Data_LiveTrack_PupilDiameter_FineMasterTime-nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime))./(nanmean(Data_LiveTrack_PupilDiameter_FineMasterTime));
+
             
             % Low-pass filter the pupil data
             % Set up filter properties
@@ -213,7 +217,7 @@ for sn = 1:NSubjects
             end
             
             % Filter it
-            [b, bint, r]=regress(Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered',X');
+            [b, bint, r] = regress(Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered',X');
             %     subplot(3,1,1)
             %     plot(params.TimeVectorFine, Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered)
             %     subplot(3,1,2)
@@ -223,6 +227,9 @@ for sn = 1:NSubjects
             %
             % Create the filtered version
             Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f = r';
+            
+            % Add the DC back in
+            Data_LiveTrack_PupilDiameter_FineMasterTime_f = Data_LiveTrack_PupilDiameter_FineMasterTime_DC + Data_LiveTrack_PupilDiameter_FineMasterTime_DC*Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f;
             
             % Find the indices of the segment starting times
             NSeconds = 13;
@@ -236,13 +243,30 @@ for sn = 1:NSubjects
             
             
             NSegments = length(startIdx);
+            
+            normalizationTimeSecs = 0.1;
+            normalizationDurId = normalizationTimeSecs*params.ResamplingFineFreq-1;
+            
             durIdx = NSeconds*params.ResamplingFineFreq-1;
+            %             for ii = 1:NSegments
+            %                 if startIdx(ii)+durIdx > length(Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f)
+            %                     Data_Per_Segment{ii} = Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f(startIdx(ii):end)';
+            %                                     else
+            %                     Data_Per_Segment{ii} = Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f(startIdx(ii):(startIdx(ii)+durIdx))';
+            %                 end
+            %             end
             for ii = 1:NSegments
-                if startIdx(ii)+durIdx > length(Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f)
-                    Data_Per_Segment{ii} = Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f(startIdx(ii):end)';
+                if startIdx(ii)+durIdx > length(Data_LiveTrack_PupilDiameter_FineMasterTime_f)
+                    Data_Per_Segment{ii} = Data_LiveTrack_PupilDiameter_FineMasterTime_f(startIdx(ii):end)';
                 else
-                    Data_Per_Segment{ii} = Data_LiveTrack_PupilDiameter_FineMasterTime_MeanCentered_f(startIdx(ii):(startIdx(ii)+durIdx))';
+                    Data_Per_Segment{ii} = Data_LiveTrack_PupilDiameter_FineMasterTime_f(startIdx(ii):(startIdx(ii)+durIdx))';
                 end
+            end
+            
+            
+            % Normalize by the dead time
+            for ii  = 1:NSegments
+                Data_Per_Segment{ii} = (Data_Per_Segment{ii} - nanmean(Data_Per_Segment{ii}(1:normalizationDurId)))./nanmean(Data_Per_Segment{ii}(1:normalizationDurId));
             end
             
             % Separate out per contrast level
