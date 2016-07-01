@@ -173,6 +173,8 @@ else
     trigger(vid);
     log = true;
     tic
+    % Preallocate the buffer
+    buffer = [];
     while log
         while toc < recTime + postBufferTime % We record some extra seconds here.
             pause(1);
