@@ -1,4 +1,4 @@
-function LiveTrackCalibration_screen(viewDist, screenSize, outDir, Window1ID, Window2ID)
+function LiveTrackCalibration_screen(viewDist, screenSize, Window1ID, Window2ID,savePath)
 % Calibration function for LiveTrack fMRI pupil tracking for experiments
 % that display stimuli on an external screen. DO NOT USE TO CALIBRATE IR
 % CAMERA WHEN USING EYEPIECE.
@@ -20,9 +20,15 @@ function LiveTrackCalibration_screen(viewDist, screenSize, outDir, Window1ID, Wi
 % LiveTrackCalibration_screen(viewDist, screenSize, outDir, Window1ID, Window2ID)
 % 
 % 03/11/16 GF - Based on crsLiveTrackCalibrationDemo.
-%% Input params
+%% Input params (demo mode)
 
 % Screen('Preference', 'SkipSyncTests', 1); % uncomment for testing only
+if ~exist ('viewDist','var')
+    viewDist = 600;    % distance in mm from the screen
+end
+if ~exist ('screenSize','var')
+    screenSize = 32;    % Diagonal of the screen in inches
+end
 
 if ~exist ('Window1ID','var')
     Window1ID = 0;    % ID of controller monitor (1 should be the primary monitor on Windows)
@@ -30,6 +36,18 @@ end
 if ~exist ('Window2ID','var')
     Window2ID = 1;    % ID of stimulus monitor (2 should be the secondary monitor on Windows)
 end
+
+if ~exist ('savePath', 'var')
+    [~, user_name] = system('whoami') ;
+    savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
+end
+
+
+% set timestamp
+formatOut = 'mmddyy_HHMMSS';
+timestamp = datestr((datetime('now')),formatOut);
+
+
 
 %% IR Camera setup
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
@@ -45,7 +63,7 @@ end
 
 %% collect calibration data
 [pupil, glint, targets, Rpc] = crsLiveTrackGet9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID);
-file1 = fullfile(outDir,'LTdat.mat');
+file1 = fullfile(savePath,['LTdat_' timestamp '.mat']);
 save(file1,'pupil','glint','targets')
 % load('LTdat.mat','pupil','glint','targets')
 
@@ -70,7 +88,7 @@ accuracy = mean(errors(~isnan(errors)));
 title(['Average error: ',num2str(accuracy),' mm'])
 xlabel('Horizontal position (mm)');ylabel('Vertical position (mm)');
 legend('Target position','Estimated gaze position')
-file2= fullfile(outDir,'LTcal.mat');
+file2= fullfile(savePath,['LTcal_' timestamp '.mat']);
 save(file2,'CalMat','Rpc')
 % load('LTcal.mat','CalMat','Rpc')
 
