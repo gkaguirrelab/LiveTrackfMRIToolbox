@@ -23,6 +23,20 @@ Config_original.xml
 
 \f1\b0 	From CRS:\
 \pard\pardeftab720\sl280\partightenfactor0
-\cf2 \cb3 \outl0\strokewidth0 \strokec2 \'93We found that when the pupil was large the data used for the ellipse fit around the pupil would pick up some noisy pixels above the pupil causing the "bouncing" in the vertical direction. This should now be fixed.\cb1 \
+\cf0 \'93We found that when the pupil was large the data used for the ellipse fit around the pupil would pick up some noisy pixels above the pupil causing the "bouncing" in the vertical direction. This should now be fixed.\
 \
-\cb3 Note, that we have also corrected for the pixel aspect ratio that you mentioned in an earlier email. You should now see the height and width to be 1:1. \'93}
+Note, that we have also corrected for the pixel aspect ratio that you mentioned in an earlier email. You should now see the height and width to be 1:1. \'93\
+\
+\
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f0\b \cf0 VET26121-Firmware\
+	
+\f1\b0 From CRS:\
+\'93\cf2 \cb3 \outl0\strokewidth0 \strokec2 We found that the pupil fitting was getting confused by reflections near the upper and lower eye lids (seems to be from the tear film).\cb1 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf2 \
+\pard\pardeftab720\sl280\partightenfactor0
+\cf2 \cb3 Please find attached a new version of the firmware which now includes code that excludes these reflections from the fitting process. \cb1 \
+\
+\cb3 Let me know how it goes. We have run videos simulating the issue through the eye tracker and we believe this solves the issue.\'94}
