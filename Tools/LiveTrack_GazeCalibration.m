@@ -1,4 +1,4 @@
-function LiveTrackCalibration_screen(viewDist, screenSize, Window1ID, Window2ID,savePath)
+function LiveTrack_GazeCalibration(viewDist, screenSize, Window1ID, Window2ID,savePath)
 % Calibration function for LiveTrack fMRI pupil tracking for experiments
 % that display stimuli on an external screen. DO NOT USE TO CALIBRATE IR
 % CAMERA WHEN USING EYEPIECE.
@@ -16,7 +16,6 @@ function LiveTrackCalibration_screen(viewDist, screenSize, Window1ID, Window2ID,
 % LiveTrackCalibration_screen(viewDist, screenSize, outDir)
 %
 %
-% To override macOS screens numbering convention:
 % LiveTrackCalibration_screen(viewDist, screenSize, outDir, Window1ID, Window2ID)
 % 
 % 03/11/16 GF - Based on crsLiveTrackCalibrationDemo.
