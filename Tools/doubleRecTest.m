@@ -1,4 +1,4 @@
- recTime= 50;
+ recTime= 30;
 
 [~, user_name] = system('whoami') ;
     savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
@@ -72,8 +72,9 @@ start([vid1 vid2]);
      while toc < recTime + postBufferTime 
         toc
         pause(1);
-    end
-    fprintf('\n Stopping...');
+     end
+     tic;
+     fprintf('\n Stopping and saving videos...');
     stop(vid2);
     clear ('vid2');
     stop (vid1)
@@ -82,4 +83,5 @@ clear
 %     delete(vid1);
 %     delete(vid2);
     close (gcf)
-
+fprintf ('done.');
+    toc

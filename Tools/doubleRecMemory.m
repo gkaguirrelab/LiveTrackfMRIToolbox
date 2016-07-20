@@ -1,6 +1,6 @@
 %% RECORD TO MEMORY FIRST
 
-recTime= 100;
+recTime= 30;
 
 [~, user_name] = system('whoami') ;
     savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
@@ -76,7 +76,8 @@ start([vid1 vid2]);
     stop([vid2 vid1]);
     
 %% transfer to disk
-
+fprintf ('\n Writing video 1...');
+tic
 % video 1
 diskLogger1 = VideoWriter(vidName1, 'MPEG-4');
 diskLogger1.Quality = 10;
@@ -91,8 +92,12 @@ for ii = 1:numFrames1
     writeVideo(diskLogger1, data1(:,:,:,ii));
 end
 close(diskLogger1);
+fprintf ('done.')
+toc;
 
 % video 2
+fprintf ('\n Writing video 2...');
+tic
 diskLogger2 = VideoWriter(vidName2, 'MPEG-4');
 diskLogger2.Quality = 10;
 
@@ -107,8 +112,10 @@ for ii = 1:numFrames2
     writeVideo(diskLogger2, data2(:,:,:,ii));
 end
 close(diskLogger2);
-    
-    
+fprintf ('done.')
+toc;
+
+
 close all    
 clear
 %     delete(vid1);

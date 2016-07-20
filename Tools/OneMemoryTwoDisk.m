@@ -1,7 +1,7 @@
 %% Video 1 on memory, video 2 on disk
 
 
-recTime= 150;
+recTime= 30;
 
 [~, user_name] = system('whoami') ;
     savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
@@ -78,8 +78,9 @@ start([vid1 vid2]);
         pause(1);
     end
     fprintf('\n Stopping...');
+    tic;
     stop([vid1 vid2]);
-    
+    toc
 %% transfer video 1 to disk
 fprintf ('\n Writing videos to disk...');
 tic;
