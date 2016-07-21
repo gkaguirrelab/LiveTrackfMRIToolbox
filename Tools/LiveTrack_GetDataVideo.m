@@ -1,4 +1,4 @@
-function [Report] = LiveTrack_GetDataVideo (TTLtrigger,recTime,savePath)
+function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
 % This function replicates a standard protocol to do pupil tracking during fMRI
 % scans using a CRS LiveTrackAV unit. It will record an MPEG-4 video (10 fps)
 % and produce a MAT report with raw tracking values of the pupil.
@@ -30,12 +30,25 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,recTime,savePath)
 % - verify the tracking on the preview window.
 % - run this function
 %
+% Usage example
+%
+% TTLtrigger= false;
+% GetRawVideo= true;
+% recTime= 15;
+% savePath = ('/Users/giulia/Desktop/');
+% [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
+%
+%
 % June 2016 - Giulia Frazzetta: written.
+% July 21, 2016 - GF: added raw video collection option
 
 %% demo mode
 % set savepath
 if ~exist ('TTLtrigger', 'var')
     TTLtrigger= false;
+end
+if ~exist ('GetRawVideo', 'var')
+    GetRawVideo= true;
 end
 if ~exist ('recTime', 'var')
     recTime= 15;
@@ -53,18 +66,26 @@ vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
 reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
 
 
-%% find  Livetrack
+%% Set Livetrack
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
-% video recording settings
 
+% video recording settings
 vid = videoinput('macvideo', 1, 'YUY2_320x240');
 src = getselectedsource(vid);
 
+% evaluate framerate
+vid.FramesPerTrigger = 30;
+start( vid );
+wait( vid, Inf );
+[d t] = getdata( vid, vid.FramesAvailable );
+fps =  1 / mean( diff( t ) )
+
+% set disk logging
 vid.FramesPerTrigger = Inf;
 vid.LoggingMode = 'disk';
 diskLogger = VideoWriter(vidName, 'MPEG-4');
-diskLogger.FrameRate = 10;  % Note that this is the default LiveTrack Camera interface frameRate.
+diskLogger.FrameRate = fps * 2;  % Note that the default livetrack fps is 10
 diskLogger.Quality = 100;
 vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual')
@@ -119,6 +140,9 @@ if TTLtrigger
         % Detect first TTL
         if Report(end).Digital_IO1 == 1 && firstTTL
             trigger(vid);
+            if GetRawVideo
+                system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+            end
             firstTTL = false;
             fprintf('\n TTL detected! \n');
             
@@ -127,7 +151,7 @@ if TTLtrigger
             fprintf('\n LiveTrack: recording...');
         end
         
-        % Record video after first TTL
+        % Record video and data after first TTL
         if TimerFlag == true
             tic
             while toc < recTime + postBufferTime % We record some extra seconds here.
@@ -171,6 +195,9 @@ else
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
     trigger(vid);
+    if GetRawVideo
+        system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+    end
     log = true;
     tic
     % Preallocate the buffer
