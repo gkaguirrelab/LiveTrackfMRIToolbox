@@ -19,8 +19,8 @@ LiveTrackVidName = fullfile(savePath,['LiveTrackVideo_' timestamp]);
 
 
 
-% source 2
-vid1 = videoinput('macvideo', 1, 'YUY2_1600x1200');
+% source 1
+vid1 = videoinput('macvideo',  1, 'YUY2_320x240');
 src1 = getselectedsource(vid1);
 vid1.ReturnedColorspace = 'rgb';
 
@@ -28,7 +28,7 @@ vid1.ReturnedColorspace = 'rgb';
 postBufferTime = 2;
 
 
-% video 2
+% video 1
 vid1.FramesPerTrigger = 30;
 start( vid1 );
 wait( vid1, Inf );

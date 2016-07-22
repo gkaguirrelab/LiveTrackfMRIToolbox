@@ -64,7 +64,7 @@ formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
 vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
 reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
-
+RawVidName = ['RawVideo_' timestamp];
 
 %% Set Livetrack
 % data collection
@@ -139,10 +139,10 @@ if TTLtrigger
         
         % Detect first TTL
         if Report(end).Digital_IO1 == 1 && firstTTL
-            trigger(vid);
             if GetRawVideo
                 system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
             end
+            trigger(vid);
             firstTTL = false;
             fprintf('\n TTL detected! \n');
             
@@ -194,10 +194,10 @@ else
     
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
-    trigger(vid);
     if GetRawVideo
         system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
     end
+    trigger(vid);
     log = true;
     tic
     % Preallocate the buffer
