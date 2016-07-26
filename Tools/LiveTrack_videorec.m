@@ -3,13 +3,20 @@ function LiveTrack_videorec(recTime, savepath)
 % stop the recording pressing the spacebar. Otherwise the recording will
 % last recTime in seconds.
 % Note that this function will show the video preview while recording. This
-% could cause instability and crashes.
+% could cause instability and crashes for long videos.
+
+% To also collect raw data from eyetracking, use LiveTrack_GetDataVideo.
 
 % May 2016 - Giulia Frazzetta: written 
-%% for quick testing
-if ~exist ('savepath', 'var')
-    savepath = '/Users/giulia/Desktop/TEST/';
+%% demo mode
+if ~exist ('recTime', 'var')
+    recTime= 15;
 end
+if ~exist ('savePath', 'var')
+    [~, user_name] = system('whoami') ;
+    savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
+end
+
 
 %% set video name
 clc
