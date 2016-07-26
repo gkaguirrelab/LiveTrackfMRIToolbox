@@ -1,7 +1,10 @@
 function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
-% This function replicates a standard protocol to do pupil tracking during fMRI
+% This function replicates a standard driver to do pupil tracking during fMRI
 % scans using a CRS LiveTrackAV unit. It will record an MPEG-4 video (10 fps)
-% and produce a MAT report with raw tracking values of the pupil.
+% and produce a MAT report with raw tracking values of the pupil. 
+% There is also the option to record a RAW video using a USB video capture device
+% that has the IR-camera stream fed as a RCA input, using ezcap
+% VideoCapture tool (for mac).
 
 % If TTLtrigger=true, the report
 % collection is initialized by the user. The video recording is triggered
@@ -12,6 +15,8 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,saveP
 % If TTLtrigger=false, the user will provide a trigger to start video and
 % data acquisition simultaneously. The report will show no TTL or
 % keypresses.
+%
+% If GetRawVideo = true, the routine will also save a raw video.
 %
 % The recording will last recTime in seconds. Results file will be saved in
 % savepath.
@@ -28,7 +33,7 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,saveP
 % - position the LiveTrack on the head mount.
 % - focus the lens on the subject pupil.
 % - verify the tracking on the preview window.
-% - run this function
+% - run this function.
 %
 % Usage example
 %
@@ -39,8 +44,8 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,saveP
 % [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
 %
 %
-% June 2016 - Giulia Frazzetta: written.
-% July 21, 2016 - GF: added raw video collection option
+% June 2016 - Giulia Frazzetta: written and commented.
+% July 21, 2016 - GF: added raw video collection option.
 
 %% demo mode
 % set savepath
