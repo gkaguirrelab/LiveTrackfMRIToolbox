@@ -18,7 +18,8 @@ formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
 vidName = ['LiveTrackVIDEO_' timestamp];
 
-
+vid = videoinput('macvideo', 1, 'YUY2_320x240');
+src = getselectedsource(vid);
 %% find and set camera for video recording
 fprintf('\n Press spacebar to initialize LiveTrack.');
 pause;

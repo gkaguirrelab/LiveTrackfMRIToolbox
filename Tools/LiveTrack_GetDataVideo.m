@@ -1,7 +1,10 @@
-function [Report] = LiveTrack_GetDataVideo (TTLtrigger,recTime,savePath)
-% This function replicates a standard protocol to do pupil tracking during fMRI
+function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
+% This function replicates a standard driver to do pupil tracking during fMRI
 % scans using a CRS LiveTrackAV unit. It will record an MPEG-4 video (10 fps)
-% and produce a MAT report with raw tracking values of the pupil.
+% and produce a MAT report with raw tracking values of the pupil. 
+% There is also the option to record a RAW video using a USB video capture device
+% that has the IR-camera stream fed as a RCA input, using ezcap
+% VideoCapture tool (for mac).
 
 % If TTLtrigger=true, the report
 % collection is initialized by the user. The video recording is triggered
@@ -12,6 +15,8 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,recTime,savePath)
 % If TTLtrigger=false, the user will provide a trigger to start video and
 % data acquisition simultaneously. The report will show no TTL or
 % keypresses.
+%
+% If GetRawVideo = true, the routine will also save a raw video.
 %
 % The recording will last recTime in seconds. Results file will be saved in
 % savepath.
@@ -28,14 +33,27 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,recTime,savePath)
 % - position the LiveTrack on the head mount.
 % - focus the lens on the subject pupil.
 % - verify the tracking on the preview window.
-% - run this function
+% - run this function.
 %
-% June 2016 - Giulia Frazzetta: written.
+% Usage example
+%
+% TTLtrigger= false;
+% GetRawVideo= true;
+% recTime= 15;
+% savePath = ('/Users/giulia/Desktop/');
+% [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
+%
+%
+% June 2016 - Giulia Frazzetta: written and commented.
+% July 21, 2016 - GF: added raw video collection option.
 
 %% demo mode
 % set savepath
 if ~exist ('TTLtrigger', 'var')
     TTLtrigger= false;
+end
+if ~exist ('GetRawVideo', 'var')
+    GetRawVideo= true;
 end
 if ~exist ('recTime', 'var')
     recTime= 15;
@@ -51,20 +69,28 @@ formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
 vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
 reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
+RawVidName = ['RawVideo_' timestamp];
 
-
-%% find  Livetrack
+%% Set Livetrack
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
-% video recording settings
 
+% video recording settings
 vid = videoinput('macvideo', 1, 'YUY2_320x240');
 src = getselectedsource(vid);
 
+% evaluate framerate
+vid.FramesPerTrigger = 30;
+start( vid );
+wait( vid, Inf );
+[d t] = getdata( vid, vid.FramesAvailable );
+fps =  1 / mean( diff( t ) )
+
+% set disk logging
 vid.FramesPerTrigger = Inf;
 vid.LoggingMode = 'disk';
 diskLogger = VideoWriter(vidName, 'MPEG-4');
-diskLogger.FrameRate = 10;  % Note that this is the default LiveTrack Camera interface frameRate.
+diskLogger.FrameRate = fps * 2;  % Note that the default livetrack fps is 10
 diskLogger.Quality = 100;
 vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual')
@@ -118,6 +144,9 @@ if TTLtrigger
         
         % Detect first TTL
         if Report(end).Digital_IO1 == 1 && firstTTL
+            if GetRawVideo
+                system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+            end
             trigger(vid);
             firstTTL = false;
             fprintf('\n TTL detected! \n');
@@ -127,7 +156,7 @@ if TTLtrigger
             fprintf('\n LiveTrack: recording...');
         end
         
-        % Record video after first TTL
+        % Record video and data after first TTL
         if TimerFlag == true
             tic
             while toc < recTime + postBufferTime % We record some extra seconds here.
@@ -170,6 +199,9 @@ else
     
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
+    if GetRawVideo
+        system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+    end
     trigger(vid);
     log = true;
     tic
