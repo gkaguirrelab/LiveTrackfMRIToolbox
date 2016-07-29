@@ -1,4 +1,4 @@
-function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
+function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath,saveName)
 % This function replicates a standard driver to do pupil tracking during fMRI
 % scans using a CRS LiveTrackAV unit. It will record an MPEG-4 video (10 fps)
 % and produce a MAT report with raw tracking values of the pupil. 
@@ -46,6 +46,7 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,saveP
 %
 % June 2016 - Giulia Frazzetta: written and commented.
 % July 21, 2016 - GF: added raw video collection option.
+% July 29, 2016 - GF: added option to customize saved files names.
 
 %% demo mode
 % set savepath
@@ -63,13 +64,18 @@ if ~exist ('savePath', 'var')
     savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
 end
 
-
 %% set saving path and names
+if ~exist ('saveName', 'var')
 formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
 vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
 reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
 RawVidName = ['RawVideo_' timestamp];
+else
+    vidName = fullfile(savePath,['LiveTrackVIDEO_' saveName]);
+reportName = fullfile(savePath,['LiveTrackREPORT_' saveName '.mat']);
+RawVidName = ['RawVideo_' saveName];
+end
 
 %% Set Livetrack
 % data collection
