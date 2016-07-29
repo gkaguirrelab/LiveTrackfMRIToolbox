@@ -52,7 +52,7 @@ timestamp = datestr((datetime('now')),formatOut);
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 
 %% video recording for every sample diameter
-
+params.pupilDiameterMmGroundTruth = scaleDiams;
 for ii = 1:length(scaleDiams)
     
     % video name setting
