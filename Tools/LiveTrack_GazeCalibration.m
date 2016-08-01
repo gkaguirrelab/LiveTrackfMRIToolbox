@@ -100,5 +100,5 @@ save(file2,'CalMat','Rpc')
 % of the keyboard. The subject then has to look at the dot in the centre
 % while an offset is being calculated. This might have to be repeated a few
 % times to make it right.
-crsLiveTrackShowGazePositionHID(deviceNumber, CalMat, Rpc, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID); 
+% crsLiveTrackShowGazePositionHID(deviceNumber, CalMat, Rpc, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID); 
 

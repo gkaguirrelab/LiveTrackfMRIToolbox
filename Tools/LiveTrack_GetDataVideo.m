@@ -61,7 +61,7 @@ if ~exist ('recTime', 'var')
 end
 if ~exist ('savePath', 'var')
     [~, user_name] = system('whoami') ;
-    savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
+    savePath = fullfile('/Users', strtrim(user_name), '/Desktop/');
 end
 
 %% set saving path and names
@@ -72,9 +72,9 @@ vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
 reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
 RawVidName = ['RawVideo_' timestamp];
 else
-    vidName = fullfile(savePath,['LiveTrackVIDEO_' saveName]);
-reportName = fullfile(savePath,['LiveTrackREPORT_' saveName '.mat']);
-RawVidName = ['RawVideo_' saveName];
+vidName = fullfile(savePath,[saveName '_track']);
+reportName = fullfile(savePath,[saveName '_report.mat']);
+RawVidName = [saveName '_raw'];
 end
 
 %% Set Livetrack
@@ -151,7 +151,7 @@ if TTLtrigger
         % Detect first TTL
         if Report(end).Digital_IO1 == 1 && firstTTL
             if GetRawVideo
-                system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+                 system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
             end
             trigger(vid);
             firstTTL = false;
