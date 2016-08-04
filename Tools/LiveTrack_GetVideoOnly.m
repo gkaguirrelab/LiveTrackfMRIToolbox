@@ -1,4 +1,4 @@
-function LiveTrack_videorec(recTime, savepath)
+function LiveTrack_GetVideoOnly(recTime, savepath)
 % Records a video from the LiveTrack camera. If recTime=Inf, the user will
 % stop the recording pressing the spacebar. Otherwise the recording will
 % last recTime in seconds.

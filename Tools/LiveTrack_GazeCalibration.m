@@ -7,7 +7,7 @@ function LiveTrack_GazeCalibration(viewDist, screenSize, Window1ID, Window2ID,sa
 % properly set up (ref. LiveTrack fMRI user manual).
 % 
 % Includes: setup, collect calibration data, calculate calibration matrix,
-% visual test to verify calibration was succesful.
+% show calibration results on a plot.
 %
 % Usage: 
 % viewDist = 500 %viewing distance in mm 
@@ -90,15 +90,3 @@ legend('Target position','Estimated gaze position')
 file2= fullfile(savePath,['LTcal_' timestamp '.mat']);
 save(file2,'CalMat','Rpc')
 % load('LTcal.mat','CalMat','Rpc')
-
-%% Draw a dot at the gaze position (using calibration from raw data at host)
-% this is to verify the calibration was successful: the function shows an
-% image of some apples on the stimulus monitor for the subject to look at
-% and a dot is drawn at the location of at the estimated gaze position. A
-% copy of this is drawn to a smaller window on the control monitor. A quick
-% offset calibration can be made by pressing minus (-) on the numeric keys
-% of the keyboard. The subject then has to look at the dot in the centre
-% while an offset is being calculated. This might have to be repeated a few
-% times to make it right.
-% crsLiveTrackShowGazePositionHID(deviceNumber, CalMat, Rpc, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID); 
-

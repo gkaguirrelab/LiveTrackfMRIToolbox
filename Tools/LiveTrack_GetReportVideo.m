@@ -1,4 +1,4 @@
-function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath,saveName)
+function [Report] = LiveTrack_GetReportVideo (TTLtrigger,GetRawVideo,recTime,savePath,saveName)
 % This function replicates a standard driver to do pupil tracking during fMRI
 % scans using a CRS LiveTrackAV unit. It will record an MPEG-4 video (10 fps)
 % and produce a MAT report with raw tracking values of the pupil. 
@@ -13,13 +13,15 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,saveP
 % recording time set by the user.
 
 % If TTLtrigger=false, the user will provide a trigger to start video and
-% data acquisition simultaneously. The report will show no TTL or
-% keypresses.
+% report acquisition. If TTL pulses are received, the report will show them.
 %
-% If GetRawVideo = true, the routine will also save a raw video.
+% If GetRawVideo = true, the routine will also save a raw video via ezCap
+% videoGrabber (must be installed and open).
 %
-% The recording will last recTime in seconds. Results file will be saved in
-% savepath.
+% The recording will last recTime in seconds. Result files will be saved in
+% savepath. It's possible to interrupt the recording prematurely pressing
+% OK on the STOP NOW window. All data will be saved as they are at the
+% moment the recording was aborted.
 %
 % It is possible to run this function in demo mode, with manual trigger and
 % a recording of 15 seconds saved on the desktop.
@@ -41,12 +43,14 @@ function [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,saveP
 % GetRawVideo= true;
 % recTime= 15;
 % savePath = ('/Users/giulia/Desktop/');
-% [Report] = LiveTrack_GetDataVideo (TTLtrigger,GetRawVideo,recTime,savePath)
+% [Report] = LiveTrack_GetReportVideo (TTLtrigger,GetRawVideo,recTime,savePath)
 %
 %
 % June 2016 - Giulia Frazzetta: written and commented.
 % July 21, 2016 - GF: added raw video collection option.
 % July 29, 2016 - GF: added option to customize saved files names.
+% August, 4, 2016 - GF: changed function name from LiveTrack_GetDataVideo
+% to LiveTrack_GetReportVideo
 
 %% demo mode
 % set savepath

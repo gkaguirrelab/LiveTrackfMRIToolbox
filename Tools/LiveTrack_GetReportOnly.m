@@ -1,6 +1,20 @@
-function [Report] = LiveTrack_GetDataOnly (showTTL,recTime,savePath,saveName)
+function [Report] = LiveTrack_GetReportOnly (showTTL,recTime,savePath,saveName)
 % Only saves out the report. The recording starts right away, no prompt is
-% asked to the user.
+% asked to the user. If showTTL is enabled, a message on the screen will
+% notify the use that the first TTL was received; recTime will start after
+% the TTL is received. Note that the first TTL does not trigger the report
+% or video acquisition.
+% If showTTL is off, no information about the first TTL is provided and
+% recTime starts as soon as the report collection begins.
+
+% Usage:
+% showTTL = false;
+% recTime = 15;
+% savePath = fullfile('/Users/giulia/Desktop/');
+% saveName = 'test'
+% LiveTrack_GetReportOnly (showTTL,recTime,savePath,saveName)
+
+% Aug 4 2016 - Giulia Frazzetta: written and commented.
 
 %% demo mode
 % set savepath
@@ -42,18 +56,11 @@ if showTTL
     
     % Set starting flags
     firstTTL = true;
-    log = true;
     TimerFlag = false;
     FS = stoploop('Interrupt data collection NOW');
     % Notify listening mode (the camera is waiting for a TTL input)
     fprintf('\n LiveTrack: Listening...');
     
-    % Play a sound
-    t = linspace(0, 1, 10000);
-    y = sin(440*2*pi*t);
-    sound(y, 20000);
-    
-    % Data and video collection
     % Preallocate the buffer
     buffer = [];
     % Record video and data
