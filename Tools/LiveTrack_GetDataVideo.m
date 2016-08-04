@@ -54,7 +54,7 @@ if ~exist ('TTLtrigger', 'var')
     TTLtrigger= false;
 end
 if ~exist ('GetRawVideo', 'var')
-    GetRawVideo= true;
+    GetRawVideo= false;
 end
 if ~exist ('recTime', 'var')
     recTime= 15;
@@ -125,7 +125,7 @@ if TTLtrigger
     firstTTL = true;
     log = true;
     TimerFlag = false;
-    
+    FS = stoploop('Interrupt data collection NOW');
     % Notify listening mode (the camera is waiting for a TTL input)
     fprintf('\n LiveTrack: Listening...');
     
@@ -138,46 +138,49 @@ if TTLtrigger
     % Preallocate the buffer
     buffer = [];
     % Record video and data
-    while log
-        % Wait for first TTL
-        PsychHID('ReceiveReports', deviceNumber);
-        [reports]=PsychHID('GiveMeReports', deviceNumber);
-        buffer = [buffer reports];
-        R = HID2struct(buffer);
-        Report = R;
-        R = 0;
-        [reports] = [0];
-        
-        % Detect first TTL
-        if Report(end).Digital_IO1 == 1 && firstTTL
-            if GetRawVideo
-                 system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
-            end
-            trigger(vid);
-            firstTTL = false;
-            fprintf('\n TTL detected! \n');
+    while ~FS.Stop()
+        log = true;
+        while log
+            % Wait for first TTL
+            PsychHID('ReceiveReports', deviceNumber);
+            [reports]=PsychHID('GiveMeReports', deviceNumber);
+            buffer = [buffer reports];
+            R = HID2struct(buffer);
+            Report = R;
+            R = 0;
+            [reports] = [0];
             
-            % Start timer
-            TimerFlag = true;
-            fprintf('\n LiveTrack: recording...');
-        end
-        
-        % Record video and data after first TTL
-        if TimerFlag == true
-            tic
-            while toc < recTime + postBufferTime % We record some extra seconds here.
-                pause(1);
-                toc % Elapsed time is displayed
-                PsychHID('ReceiveReports', deviceNumber);
-                [reports]=PsychHID('GiveMeReports', deviceNumber);
-                buffer = [buffer reports];
-                R = HID2struct(buffer);
-                Report = R;
-                R = 0;
-                [reports] = [0];
+            % Detect first TTL
+            if Report(end).Digital_IO1 == 1 && firstTTL
+                if GetRawVideo
+                    system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+                end
+                trigger(vid);
+                firstTTL = false;
+                fprintf('\n TTL detected! \n');
+                
+                % Start timer
+                TimerFlag = true;
+                fprintf('\n LiveTrack: recording...');
             end
-            display('LiveTrack:stopping...');
-            log = false;
+            
+            % Record video and data after first TTL
+            if TimerFlag == true
+                tic
+                while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
+                    pause(1);
+                    toc % Elapsed time is displayed
+                    PsychHID('ReceiveReports', deviceNumber);
+                    [reports]=PsychHID('GiveMeReports', deviceNumber);
+                    buffer = [buffer reports];
+                    R = HID2struct(buffer);
+                    Report = R;
+                    R = 0;
+                    [reports] = [0];
+                end
+                display('LiveTrack:stopping...');
+                log = false;
+            end
         end
     end
     % Stop video and data recording
@@ -188,7 +191,6 @@ if TTLtrigger
     closepreview(vid);
     save(reportName, 'Report');
     fprintf('Matfile and video saved.\n');
-    
 else
     % initialize
     fprintf('\n Press spacebar to initialize LiveTrack.');
@@ -210,11 +212,12 @@ else
     end
     trigger(vid);
     log = true;
+    FS = stoploop('Interrupt data collection NOW');
     tic
     % Preallocate the buffer
     buffer = [];
-    while log
-        while toc < recTime + postBufferTime % We record some extra seconds here.
+    while  log
+        while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
             pause(1);
             toc % Elapsed time is displayed
             PsychHID('ReceiveReports', deviceNumber);
@@ -241,5 +244,8 @@ end
 % Clean the video object
 delete(vid)
 close(gcf)
+
+FS.Clear() ;
+clear FS ;
 
 
