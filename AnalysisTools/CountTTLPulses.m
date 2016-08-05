@@ -1,4 +1,4 @@
-function [uniquePulses] = CountTTLPulses (Report)
+function [TTLPulses] = CountTTLPulses (Report)
 % Calculates the unique TTL pulses received by the LiveTrack device. It is
 % useful to check if the number corresponds to the TR count.
 
@@ -11,5 +11,5 @@ for ii = 1:length(spacing)
         adjacent (ii) = 0;
     end
 end
-uniquePulses = length (allPulses) - length (find(adjacent));
+TTLPulses = length (allPulses) - length (find(adjacent));
     
