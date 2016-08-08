@@ -157,7 +157,7 @@ if TTLtrigger
             % Detect first TTL
             if Report(end).Digital_IO1 == 1 && firstTTL
                 if GetRawVideo
-                    system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+                    system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
                 end
                 trigger(vid);
                 firstTTL = false;
@@ -212,7 +212,7 @@ else
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
     if GetRawVideo
-        system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/Tools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+        system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
     end
     trigger(vid);
     log = true;
