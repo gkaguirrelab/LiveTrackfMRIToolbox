@@ -94,13 +94,13 @@ vid.FramesPerTrigger = 30;
 start( vid );
 wait( vid, Inf );
 [d t] = getdata( vid, vid.FramesAvailable );
-fps =  1 / mean( diff( t ) )
+fps =  1 / mean( diff( t ) ) % Verify that FPS is indeed 10
 
 % set disk logging
 vid.FramesPerTrigger = Inf;
 vid.LoggingMode = 'disk';
 diskLogger = VideoWriter(vidName, 'MPEG-4');
-diskLogger.FrameRate = fps * 2;  % Note that the default livetrack fps is 10
+diskLogger.FrameRate = 10;  % Note that the default livetrack fps is 10
 diskLogger.Quality = 100;
 vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual')
