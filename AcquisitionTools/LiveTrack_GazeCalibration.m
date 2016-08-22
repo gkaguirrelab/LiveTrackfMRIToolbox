@@ -90,3 +90,6 @@ legend('Target position','Estimated gaze position')
 file2= fullfile(savePath,['LTcal_' timestamp '.mat']);
 save(file2,'CalMat','Rpc')
 % load('LTcal.mat','CalMat','Rpc')
+
+% save the error figure
+savefig(fullfile(savepath, ['MeanError_' timestamp]));
