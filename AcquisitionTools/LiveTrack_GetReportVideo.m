@@ -100,7 +100,7 @@ fps =  1 / mean( diff( t ) ) % Verify that FPS is indeed 10
 vid.FramesPerTrigger = Inf;
 vid.LoggingMode = 'disk';
 diskLogger = VideoWriter(vidName, 'MPEG-4');
-diskLogger.FrameRate = 10;  % Note that the default livetrack fps is 10
+diskLogger.FrameRate = fps * 2;  % Note that the default livetrack video fps is 10, but each frame is displayed twice. Hence, the livetrack video shows one in every 3 frames on the report.
 diskLogger.Quality = 100;
 vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual')
