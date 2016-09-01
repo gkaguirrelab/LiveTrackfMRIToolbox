@@ -63,48 +63,46 @@ if showTTL
     
     % Preallocate the buffer
     buffer = [];
-    % Record video and data
-    while ~FS.Stop()
-        log = true;
-        while log
-            % Wait for first TTL
-            PsychHID('ReceiveReports', deviceNumber);
-            [reports]=PsychHID('GiveMeReports', deviceNumber);
-            buffer = [buffer reports];
-            R = HID2struct(buffer);
-            Report = R;
-            R = 0;
-            [reports] = [0];
+    % Record report
+    log = true;
+    while (~FS.Stop() && log)
+        % Wait for first TTL
+        PsychHID('ReceiveReports', deviceNumber);
+        [reports]=PsychHID('GiveMeReports', deviceNumber);
+        buffer = [buffer reports];
+        R = HID2struct(buffer);
+        Report = R;
+        R = 0;
+        [reports] = [0];
+        
+        % Detect first TTL
+        if Report(end).Digital_IO1 == 1 && firstTTL
+            firstTTL = false;
+            fprintf('\n TTL detected! \n');
             
-            % Detect first TTL
-            if Report(end).Digital_IO1 == 1 && firstTTL
-                firstTTL = false;
-                fprintf('\n TTL detected! \n');
-                
-                % Start timer
-                TimerFlag = true;
+            % Start timer
+            TimerFlag = true;
+        end
+        
+        % Record report after first TTL
+        if TimerFlag == true
+            tic
+            while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
+                PsychHID('ReceiveReports', deviceNumber);
+                [reports]=PsychHID('GiveMeReports', deviceNumber);
+                buffer = [buffer reports];
+                R = HID2struct(buffer);
+                Report = R;
+                R = 0;
+                [reports] = [0];
             end
-            
-            % Record video and data after first TTL
-            if TimerFlag == true
-                tic
-                while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
-                    pause(1);
-                    toc % Elapsed time is displayed
-                    PsychHID('ReceiveReports', deviceNumber);
-                    [reports]=PsychHID('GiveMeReports', deviceNumber);
-                    buffer = [buffer reports];
-                    R = HID2struct(buffer);
-                    Report = R;
-                    R = 0;
-                    [reports] = [0];
-                end
-                display('LiveTrack:stopping...');
-                log = false;
-            end
+            display('LiveTrack:stopping...\n');
+            toc % Elapsed time is displayed
+            log = false;
         end
     end
-    % Stop video and data recording
+    
+    % Stop data collection
     LiveTrackHIDcomm(deviceNumber, 'end');
     pause(0.5);
     
@@ -124,8 +122,6 @@ else
     buffer = [];
     while  log
         while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
-            pause(1);
-            toc % Elapsed time is displayed
             PsychHID('ReceiveReports', deviceNumber);
             [reports]=PsychHID('GiveMeReports', deviceNumber);
             buffer = [buffer reports];
@@ -134,10 +130,11 @@ else
             R = 0;
             [reports] = [0];
         end
-        display('LiveTrack:stopping...');
+        display('LiveTrack:stopping...\n');
+        toc % Elapsed time is displayed
         log = false;
     end
-    % stop data recording
+    % stop data collection
     LiveTrackHIDcomm(deviceNumber,'end');
     pause(0.5);
     save(reportName, 'Report');
