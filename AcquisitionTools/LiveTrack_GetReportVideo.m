@@ -157,7 +157,13 @@ if TTLtrigger
         % Detect first TTL
         if Report(end).Digital_IO1 == 1 && firstTTL
             if GetRawVideo
+                RawTiming.scriptStarts = GetSecs;
                 system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+                RawTiming.scriptEnds = GetSecs;
+                % note that the video recording begins in the timeframe
+                % between the 2 getsecs. This limits the raw video syncing
+                % problem to the Frames with a Report.PsychHIDTime within
+                % this interval.
             end
             trigger(vid);
             firstTTL = false;
@@ -193,6 +199,9 @@ if TTLtrigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+    if GetRawVideo
+        save([RawVidName '_timingInfo'], 'RawTiming');
+    end
     fprintf('Matfile and video saved.\n');
 
 else  %manual trigger
@@ -212,9 +221,17 @@ else  %manual trigger
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
     if GetRawVideo
+        RawTiming.scriptStarts = GetSecs;
         system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+        RawTiming.scriptEnds = GetSecs;
+        % note that the video recording begins in the timeframe
+        % between the 2 getsecs. This limits the raw video syncing
+        % problem to the Frames with a Report.PsychHIDTime within
+        % this interval.
     end
+    RawTiming.trackVidTriggerStarts = GetSecs;
     trigger(vid);
+    RawTiming.trackVidTriggerEnds = GetSecs;
     log = true;
     FS = stoploop('Interrupt data collection NOW');
     tic
@@ -241,6 +258,9 @@ else  %manual trigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+    if GetRawVideo
+        save([RawVidName '_timingInfo'], 'RawTiming');
+    end
     fprintf('Matfile and video saved.\n');
 end
 
