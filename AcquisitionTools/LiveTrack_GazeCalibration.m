@@ -1,4 +1,4 @@
-function LiveTrack_GazeCalibration(viewDist, screenSize, Window1ID, Window2ID,savePath)
+function LiveTrack_GazeCalibration(viewDist, screenSize, Window1ID, Window2ID,savePath,saveName)
 % Calibration function for LiveTrack fMRI pupil tracking for experiments
 % that display stimuli on an external screen. DO NOT USE TO CALIBRATE IR
 % CAMERA WHEN USING EYEPIECE.
@@ -41,11 +41,12 @@ if ~exist ('savePath', 'var')
     savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
 end
 
-
+if ~exist ('saveName', 'var')
 % set timestamp
 formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
-
+saveName = timestamp;
+end 
 
 
 %% IR Camera setup
@@ -62,7 +63,7 @@ end
 
 %% collect calibration data
 [pupil, glint, targets, Rpc] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID);
-file1 = fullfile(savePath,['LTdat_' timestamp '.mat']);
+file1 = fullfile(savePath,['LTdat_' saveName '.mat']);
 save(file1,'pupil','glint','targets')
 % load('LTdat.mat','pupil','glint','targets')
 
@@ -74,7 +75,7 @@ CalMat = crsLiveTrackCalculateCalibrationMatrix(pupil, glint, targets, viewDist,
 
 data = crsLiveTrackCalibrateRawData(CalMat, Rpc, pupil, glint);
 
-figure; hold on;
+theFig = figure; hold on;
 % plot each true and tracked target position. Red cross means target
 % position and blue means tracked gaze position.
 for i = 1:length(data(:,1))
@@ -87,9 +88,9 @@ accuracy = mean(errors(~isnan(errors)));
 title(['Average error: ',num2str(accuracy),' mm'])
 xlabel('Horizontal position (mm)');ylabel('Vertical position (mm)');
 legend('Target position','Estimated gaze position')
-file2= fullfile(savePath,['LTcal_' timestamp '.mat']);
+file2= fullfile(savePath,['LTcal_' saveName '.mat']);
 save(file2,'CalMat','Rpc')
 % load('LTcal.mat','CalMat','Rpc')
 
 % save the error figure
-savefig(fullfile(savepath, ['MeanError_' timestamp]));
+savefig(theFig,fullfile(savepath, ['MeanError_' saveName '.fig']));
