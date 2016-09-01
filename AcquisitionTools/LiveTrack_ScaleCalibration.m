@@ -116,8 +116,6 @@ for ii = 1:length(scaleDiams)
         display('LiveTrack: recording...');
         tic
         while toc < recTime
-            pause(1);
-            toc
             PsychHID('ReceiveReports',deviceNumber);
             [reports]=PsychHID('GiveMeReports',deviceNumber);
             buffer = [buffer reports];
@@ -126,6 +124,7 @@ for ii = 1:length(scaleDiams)
             R = 0;
             [reports] = [0];
         end
+        toc % Elapsed time is displayed
     end
     
     % end data and video recording

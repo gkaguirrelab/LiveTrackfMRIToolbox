@@ -1,7 +1,7 @@
 function [Report] = LiveTrack_GetReportVideo (TTLtrigger,GetRawVideo,recTime,savePath,saveName)
 % This function replicates a standard driver to do pupil tracking during fMRI
 % scans using a CRS LiveTrackAV unit. It will record an MPEG-4 video (10 fps)
-% and produce a MAT report with raw tracking values of the pupil. 
+% and produce a MAT report with raw tracking values of the pupil.
 % There is also the option to record a RAW video using a USB video capture device
 % that has the IR-camera stream fed as a RCA input, using ezcap
 % VideoCapture tool (for mac).
@@ -70,15 +70,15 @@ end
 
 %% set saving path and names
 if ~exist ('saveName', 'var')
-formatOut = 'mmddyy_HHMMSS';
-timestamp = datestr((datetime('now')),formatOut);
-vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
-reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
-RawVidName = ['RawVideo_' timestamp];
+    formatOut = 'mmddyy_HHMMSS';
+    timestamp = datestr((datetime('now')),formatOut);
+    vidName = fullfile(savePath,['LiveTrackVIDEO_' timestamp]);
+    reportName = fullfile(savePath,['LiveTrackREPORT_' timestamp '.mat']);
+    RawVidName = ['RawVideo_' timestamp];
 else
-vidName = fullfile(savePath,[saveName '_track']);
-reportName = fullfile(savePath,[saveName '_report.mat']);
-RawVidName = [saveName '_raw'];
+    vidName = fullfile(savePath,[saveName '_track']);
+    reportName = fullfile(savePath,[saveName '_report.mat']);
+    RawVidName = [saveName '_raw'];
 end
 
 %% Set Livetrack
@@ -106,6 +106,13 @@ vid.DiskLogger = diskLogger;
 triggerconfig(vid, 'manual')
 
 postBufferTime = 5; % 5 seconds
+
+
+% get path for the Raw video recording Applescript
+if GetRawVideo
+    rawScriptPath = which('RawVideoRec.scpt');
+end
+    
 
 %% record video and data
 if TTLtrigger
@@ -141,52 +148,57 @@ if TTLtrigger
     % Data and video collection
     % Preallocate the buffer
     buffer = [];
+    
     % Record video and data
-    while ~FS.Stop()
-        log = true;
-        while log
-            % Wait for first TTL
-            PsychHID('ReceiveReports', deviceNumber);
-            [reports]=PsychHID('GiveMeReports', deviceNumber);
-            buffer = [buffer reports];
-            R = HID2struct(buffer);
-            Report = R;
-            R = 0;
-            [reports] = [0];
-            
-            % Detect first TTL
-            if Report(end).Digital_IO1 == 1 && firstTTL
-                if GetRawVideo
-                    system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
-                end
-                trigger(vid);
-                firstTTL = false;
-                fprintf('\n TTL detected! \n');
-                
-                % Start timer
-                TimerFlag = true;
-                fprintf('\n LiveTrack: recording...');
+    log = true;
+    while (~FS.Stop() && log)
+        % Wait for first TTL
+        PsychHID('ReceiveReports', deviceNumber);
+        [reports]=PsychHID('GiveMeReports', deviceNumber);
+        buffer = [buffer reports];
+        R = HID2struct(buffer);
+        Report = R;
+        R = 0;
+        [reports] = [0];
+        
+        % Detect first TTL
+        if Report(end).Digital_IO1 == 1 && firstTTL
+            if GetRawVideo
+                RawTiming.scriptStarts = GetSecs;
+                system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
+                RawTiming.scriptEnds = GetSecs;
+                % note that the video recording begins in the timeframe
+                % between the 2 getsecs. This limits the raw video syncing
+                % problem to the Frames with a Report.PsychHIDTime within
+                % this interval.
             end
+            trigger(vid);
+            firstTTL = false;
+            fprintf('\n TTL detected! \n');
             
-            % Record video and data after first TTL
-            if TimerFlag == true
-                tic
-                while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
-                    pause(1);
-                    toc % Elapsed time is displayed
-                    PsychHID('ReceiveReports', deviceNumber);
-                    [reports]=PsychHID('GiveMeReports', deviceNumber);
-                    buffer = [buffer reports];
-                    R = HID2struct(buffer);
-                    Report = R;
-                    R = 0;
-                    [reports] = [0];
-                end
-                display('LiveTrack:stopping...');
-                log = false;
+            % Start timer
+            TimerFlag = true;
+            fprintf('\n LiveTrack: recording...\n');
+        end
+        
+        % Record video and data after first TTL
+        if TimerFlag == true
+            tic
+            while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
+                PsychHID('ReceiveReports', deviceNumber);
+                [reports]=PsychHID('GiveMeReports', deviceNumber);
+                buffer = [buffer reports];
+                R = HID2struct(buffer);
+                Report = R;
+                R = 0;
+                [reports] = [0];
             end
+            display('\n LiveTrack:stopping...\n');
+            toc % Elapsed time is displayed
+            log = false;
         end
     end
+    
     % Stop video and data recording
     LiveTrackHIDcomm(deviceNumber, 'end');
     pause(0.5);
@@ -194,14 +206,18 @@ if TTLtrigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+    if GetRawVideo
+        save([RawVidName '_timingInfo'], 'RawTiming');
+    end
     fprintf('Matfile and video saved.\n');
-else
+
+else  %manual trigger
     % initialize
     fprintf('\n Press spacebar to initialize LiveTrack.');
     pause;
     [reports] = [0];
     PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
-    LiveTrackHIDcomm(deviceNumber,'begin');
+    
     start(vid); %initialize video ob
     
     % Play a sound
@@ -211,10 +227,20 @@ else
     
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
+    fprintf('\n LiveTrack: recording...\n');
+    LiveTrackHIDcomm(deviceNumber,'begin');
     if GetRawVideo
-        system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+        RawTiming.scriptStarts = GetSecs;
+        system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
+        RawTiming.scriptEnds = GetSecs;
+        % note that the video recording begins in the timeframe
+        % between the 2 getsecs. This limits the raw video syncing
+        % problem to the Frames with a Report.PsychHIDTime within
+        % this interval.
     end
+    RawTiming.trackVidTriggerStarts = GetSecs;
     trigger(vid);
+    RawTiming.trackVidTriggerEnds = GetSecs;
     log = true;
     FS = stoploop('Interrupt data collection NOW');
     tic
@@ -222,8 +248,6 @@ else
     buffer = [];
     while  log
         while (~FS.Stop() && toc < recTime + postBufferTime) % We record some extra seconds here.
-            pause(1);
-            toc % Elapsed time is displayed
             PsychHID('ReceiveReports', deviceNumber);
             [reports]=PsychHID('GiveMeReports', deviceNumber);
             buffer = [buffer reports];
@@ -232,7 +256,8 @@ else
             R = 0;
             [reports] = [0];
         end
-        display('LiveTrack:stopping...');
+        display('\nLiveTrack:stopping...\n');
+        toc % Elapsed time is displayed
         log = false;
     end
     % stop video e data recording
@@ -242,6 +267,9 @@ else
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+    if GetRawVideo
+        save([RawVidName '_timingInfo'], 'RawTiming');
+    end
     fprintf('Matfile and video saved.\n');
 end
 
