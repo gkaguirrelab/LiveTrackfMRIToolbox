@@ -193,7 +193,7 @@ if TTLtrigger
                 R = 0;
                 [reports] = [0];
             end
-            display('\n LiveTrack:stopping...\n');
+            fprintf('\n LiveTrack:stopping...\n');
             toc % Elapsed time is displayed
             log = false;
         end
@@ -256,7 +256,7 @@ else  %manual trigger
             R = 0;
             [reports] = [0];
         end
-        display('\nLiveTrack:stopping...\n');
+        fprintf('\nLiveTrack:stopping...\n');
         toc % Elapsed time is displayed
         log = false;
     end
