@@ -107,6 +107,13 @@ triggerconfig(vid, 'manual')
 
 postBufferTime = 5; % 5 seconds
 
+
+% get path for the Raw video recording Applescript
+if GetRawVideo
+    rawScriptPath = which('RawVideoRec.scpt');
+end
+    
+
 %% record video and data
 if TTLtrigger
     % Prompt user to initialize LiveTrackAV
@@ -158,7 +165,7 @@ if TTLtrigger
         if Report(end).Digital_IO1 == 1 && firstTTL
             if GetRawVideo
                 RawTiming.scriptStarts = GetSecs;
-                system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+                system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
                 RawTiming.scriptEnds = GetSecs;
                 % note that the video recording begins in the timeframe
                 % between the 2 getsecs. This limits the raw video syncing
@@ -224,7 +231,7 @@ else  %manual trigger
     LiveTrackHIDcomm(deviceNumber,'begin');
     if GetRawVideo
         RawTiming.scriptStarts = GetSecs;
-        system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
+        system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
         RawTiming.scriptEnds = GetSecs;
         % note that the video recording begins in the timeframe
         % between the 2 getsecs. This limits the raw video syncing
