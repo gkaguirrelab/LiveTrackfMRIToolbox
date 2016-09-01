@@ -171,7 +171,7 @@ if TTLtrigger
             
             % Start timer
             TimerFlag = true;
-            fprintf('\n LiveTrack: recording...');
+            fprintf('\n LiveTrack: recording...\n');
         end
         
         % Record video and data after first TTL
@@ -186,7 +186,7 @@ if TTLtrigger
                 R = 0;
                 [reports] = [0];
             end
-            display('LiveTrack:stopping...\n');
+            display('\n LiveTrack:stopping...\n');
             toc % Elapsed time is displayed
             log = false;
         end
@@ -210,7 +210,7 @@ else  %manual trigger
     pause;
     [reports] = [0];
     PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
-    LiveTrackHIDcomm(deviceNumber,'begin');
+    
     start(vid); %initialize video ob
     
     % Play a sound
@@ -220,6 +220,8 @@ else  %manual trigger
     
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
+    fprintf('\n LiveTrack: recording...\n');
+    LiveTrackHIDcomm(deviceNumber,'begin');
     if GetRawVideo
         RawTiming.scriptStarts = GetSecs;
         system(sprintf('osascript /Users/Shared/Matlab/gkaguirrelab/LiveTrackfMRIToolbox/AcquisitionTools/RawVideoRec.scpt %s %s %s', savePath, RawVidName, num2str(recTime+postBufferTime)));
@@ -247,7 +249,7 @@ else  %manual trigger
             R = 0;
             [reports] = [0];
         end
-        display('LiveTrack:stopping...');
+        display('\nLiveTrack:stopping...\n');
         toc % Elapsed time is displayed
         log = false;
     end
