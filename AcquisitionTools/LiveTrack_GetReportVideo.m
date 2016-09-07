@@ -207,7 +207,7 @@ if TTLtrigger
     closepreview(vid);
     save(reportName, 'Report');
     if GetRawVideo
-        save([RawVidName '_timingInfo'], 'RawTiming');
+        save(fullfile(savePath,[RawVidName '_timingInfo']), 'RawTiming');
     end
     fprintf('Matfile and video saved.\n');
 
@@ -268,7 +268,7 @@ else  %manual trigger
     closepreview(vid);
     save(reportName, 'Report');
     if GetRawVideo
-        save([RawVidName '_timingInfo'], 'RawTiming');
+        save(fullfile(savePath,[RawVidName '_timingInfo']), 'RawTiming');
     end
     fprintf('Matfile and video saved.\n');
 end
