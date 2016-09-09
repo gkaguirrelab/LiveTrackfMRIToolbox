@@ -93,4 +93,4 @@ save(file2,'CalMat','Rpc')
 % load('LTcal.mat','CalMat','Rpc')
 
 % save the error figure
-savefig(theFig,fullfile(savepath, ['MeanError_' saveName '.fig']));
+saveas(theFig,fullfile(savePath, ['MeanError_' saveName '.fig']));
