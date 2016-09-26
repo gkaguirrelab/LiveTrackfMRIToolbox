@@ -257,18 +257,19 @@ else  %manual trigger
             [reports]=PsychHID('GiveMeReports', deviceNumber);
             buffer = [buffer reports];
             R = HID2struct(buffer);
-            Report = R;
-            R = 0;
-            [reports] = [0];
             % check if a TTL pulse is received within the first 30 seconds
             if firstTTL && toc < 30
-                if Report(end).Digital_IO1 == 1
+                if R(end).Digital_IO1 == 1
                     fprintf('\n >> First TTL received!')
                     firstTTL = false;
                 end
             else
                 firstTTL = false;
-            end     
+            end
+            %transfer data to permanent variable (Report)
+            Report = R;
+            R = 0;
+            [reports] = [0];
         end
         fprintf('\nLiveTrack:stopping...\n');
         toc % Elapsed time is displayed
