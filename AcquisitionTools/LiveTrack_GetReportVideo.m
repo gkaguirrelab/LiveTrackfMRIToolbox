@@ -82,6 +82,7 @@ else
 end
 
 %% Set Livetrack
+closeLiveTrack;
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 
@@ -294,5 +295,7 @@ close(gcf)
 
 FS.Clear() ;
 clear FS ;
+
+closeLiveTrack;
 
 
