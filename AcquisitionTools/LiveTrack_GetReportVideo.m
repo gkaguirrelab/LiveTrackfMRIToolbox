@@ -82,6 +82,7 @@ else
 end
 
 %% Set Livetrack
+closeLiveTrack;
 % data collection
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 
@@ -133,7 +134,7 @@ if TTLtrigger
     start(vid);
     
     % Set starting flags
-    firstTTL = true;
+    firstTTL = true;  %to detect first TTL
     log = true;
     TimerFlag = false;
     FS = stoploop('Interrupt data collection NOW');
@@ -162,7 +163,7 @@ if TTLtrigger
         [reports] = [0];
         
         % Detect first TTL
-        if Report(end).Digital_IO1 == 1 && firstTTL
+        if firstTTL && Report(end).Digital_IO1 == 1
             if GetRawVideo
                 RawTiming.scriptStarts = GetSecs;
                 system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
@@ -218,12 +219,18 @@ else  %manual trigger
     [reports] = [0];
     PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
     
-    start(vid); %initialize video ob
+    % set starting flags
+    log = true; %logging
+    firstTTL = true;
+    
+    %initialize video ob
+    start(vid); 
     
     % Play a sound
     t = linspace(0, 1, 10000);
     y = sin(440*2*pi*t);
     sound(y, 20000);
+    
     
     fprintf('\n Press spacebar to start collecting video and data.');
     pause;
@@ -241,7 +248,6 @@ else  %manual trigger
     RawTiming.trackVidTriggerStarts = GetSecs;
     trigger(vid);
     RawTiming.trackVidTriggerEnds = GetSecs;
-    log = true;
     FS = stoploop('Interrupt data collection NOW');
     tic
     % Preallocate the buffer
@@ -252,6 +258,16 @@ else  %manual trigger
             [reports]=PsychHID('GiveMeReports', deviceNumber);
             buffer = [buffer reports];
             R = HID2struct(buffer);
+            % check if a TTL pulse is received within the first 30 seconds
+            if firstTTL && toc < 30
+                if R(end).Digital_IO1 == 1
+                    fprintf('\n >> First TTL received!')
+                    firstTTL = false;
+                end
+            else
+                firstTTL = false;
+            end
+            %transfer data to permanent variable (Report)
             Report = R;
             R = 0;
             [reports] = [0];
@@ -279,5 +295,7 @@ close(gcf)
 
 FS.Clear() ;
 clear FS ;
+
+closeLiveTrack;
 
 
