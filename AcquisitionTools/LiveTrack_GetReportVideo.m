@@ -121,6 +121,11 @@ if TTLtrigger
     fprintf('\n Press spacebar to initialize LiveTrack.');
     pause;
     
+    %sync GetSecs and gDate
+    RawTiming.syncGetSecs = GetSecs;
+    [~, echo] = system('/usr/local/bin/gdate +%s.%N');
+    RawTiming.syncGDate = str2num(echo);
+    
     % Clear reports variable
     [reports] = [0];
     
@@ -221,7 +226,12 @@ if TTLtrigger
 else  %manual trigger
     % initialize
     fprintf('\n Press spacebar to initialize LiveTrack.');
-    pause;
+    pause()
+    %sync GetSecs and gDate
+    RawTiming.syncGetSecs = GetSecs;
+    [~, echo] = system('/usr/local/bin/gdate +%s.%N');
+    RawTiming.syncGDate = str2num(echo);
+    
     [reports] = [0];
     PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
     
@@ -239,7 +249,7 @@ else  %manual trigger
     
     
     fprintf('\n Press spacebar to start collecting video and data.');
-    pause;
+    pause();
     fprintf('\n LiveTrack: recording...\n');
     LiveTrackHIDcomm(deviceNumber,'begin');
     if GetRawVideo
