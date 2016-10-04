@@ -50,6 +50,7 @@ end
 
 
 %% IR Camera setup
+closeLiveTrack;
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 if ~isempty(strfind(type,'AV')),
     NoOfGlints = 1;% one for LiveTrack for fMRI
@@ -63,7 +64,7 @@ end
 
 %% collect calibration data
 [pupil, glint, targets, Rpc] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID);
-file1 = fullfile(savePath,['LTdat_' saveName '.mat']);
+file1 = fullfile(savePath,[saveName '_LTdat.mat']);
 save(file1,'pupil','glint','targets')
 % load('LTdat.mat','pupil','glint','targets')
 
@@ -88,9 +89,11 @@ accuracy = mean(errors(~isnan(errors)));
 title(['Average error: ',num2str(accuracy),' mm'])
 xlabel('Horizontal position (mm)');ylabel('Vertical position (mm)');
 legend('Target position','Estimated gaze position')
-file2= fullfile(savePath,['LTcal_' saveName '.mat']);
+file2= fullfile(savePath,[saveName '_LTcal.mat']);
 save(file2,'CalMat','Rpc')
 % load('LTcal.mat','CalMat','Rpc')
 
 % save the error figure
-saveas(theFig,fullfile(savePath, ['MeanError_' saveName '.fig']));
+saveas(theFig,fullfile(savePath, [saveName 'MeanError.fig']));
+
+closeLiveTrack;
