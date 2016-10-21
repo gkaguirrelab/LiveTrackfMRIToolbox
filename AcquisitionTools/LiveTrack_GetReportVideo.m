@@ -279,9 +279,8 @@ else  %manual trigger
             % check if a TTL pulse is received within the first 30 seconds
             if firstTTL && toc < 30
                 if R(end).Digital_IO1 == 1
-                    fprintf('\n >> First TTL received!')
-                    firstTTLTime = GetSecs;
-                    save(fullfile(savePath,'FirstTTLtime'), 'firstTTLTime');
+                    firstTTLTime = R(end).PsychHIDtime;
+                    fprintf('\n >> First TTL received! - %.20f', firstTTLTime)
                     firstTTL = false;
                 end
             else
@@ -303,6 +302,7 @@ else  %manual trigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+    save(fullfile(savePath,'FirstTTLtime'), 'firstTTLTime');
     if GetRawVideo
         % save UnixDate timing info for raw video (gDate)
         RawTiming.BeforeAppleScript = str2num(echo1);
