@@ -280,6 +280,8 @@ else  %manual trigger
             if firstTTL && toc < 30
                 if R(end).Digital_IO1 == 1
                     fprintf('\n >> First TTL received!')
+                    firstTTLTime = GetSecs;
+                    save(fullfile(savePath,'FirstTTLtime'), 'firstTTLTime');
                     firstTTL = false;
                 end
             else
