@@ -93,7 +93,8 @@ src = getselectedsource(vid);
 % evaluate framerate
 vid.FramesPerTrigger = 30;
 start( vid );
-wait( vid, Inf );
+waitTime = 10; % wait a max of 10 seconds to acquire the 30 frames to determine the framerate
+wait( vid, waitTime );
 [d t] = getdata( vid, vid.FramesAvailable );
 fps =  1 / mean( diff( t ) ) % Verify that FPS is indeed 10
 
