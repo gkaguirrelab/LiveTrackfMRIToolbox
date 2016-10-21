@@ -51,3 +51,4 @@ if ~endScript
     disp('timeout - TTL NOT received');
     PsychHID('SetReport', deviceNumber, 2, 0, uint8([102 zeros(1,63)]));
 end
+closeLiveTrack
