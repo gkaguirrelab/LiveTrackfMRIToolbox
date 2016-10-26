@@ -302,7 +302,7 @@ else  %manual trigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
-    save(fullfile(savePath,'FirstTTLtime'), 'firstTTLTime');
+    save(fullfile(savePath,[saveName '_FirstTTLTime']), 'firstTTLTime');
     if GetRawVideo
         % save UnixDate timing info for raw video (gDate)
         RawTiming.BeforeAppleScript = str2num(echo1);
