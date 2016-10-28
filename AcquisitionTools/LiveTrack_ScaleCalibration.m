@@ -149,7 +149,7 @@ for ii = 1:length(scaleDiams)
     params.ReportRaw{ii} = Report;
     
     % clean the video object
-    delete(vid)
+    close(vid)
     close(gcf)
     
     
