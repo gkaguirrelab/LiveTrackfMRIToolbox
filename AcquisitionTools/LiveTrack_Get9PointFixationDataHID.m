@@ -222,7 +222,8 @@ for i = 1:size(calTargets,1)
 
 
 end
-
+% get end time for last dot presented
+dotTimes(i+1) = GetSecs;
 % end of fixations. Stop LiveTrack
 crsLiveTrackHIDcomm(deviceNumber,'end');
 % LiveTrackHIDstop(deviceNumber);
