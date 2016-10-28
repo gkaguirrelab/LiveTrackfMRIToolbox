@@ -5,4 +5,4 @@ Toolbox to operate LiveTrackAV fMRI eyetracking camera under the protocols devel
 Requires: Psychtoolbox (http://psychtoolbox.org/), BrainardLabToolbox (https://github.com/DavidBrainard/BrainardLabToolbox).
 
 
-Developers: Giulia Frazzetta, Manuel Spitschan
+Developers: Giulia Frazzetta, Manuel Spitschan, Andrew S Bock.
