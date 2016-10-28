@@ -12,6 +12,7 @@ function gaze = calcGaze(params)
 %       params.glint.Y      - vector of glint Y coordinates (pixels)
 %       params.viewDist     - viewing distance (mm)
 %       params.rpc          - adjustment parameter (see 'calcRpc')
+%       params.calMat       - transformation matrix (see 'calcCalMat');
 %
 %
 %   Outputs:
