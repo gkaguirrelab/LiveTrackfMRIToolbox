@@ -63,9 +63,9 @@ else
 end
 
 %% collect calibration data
-[pupil, glint, targets, Rpc] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID);
+[pupil, glint, targets, Rpc, dotTimes] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID);
 file1 = fullfile(savePath,[saveName '_LTdat.mat']);
-save(file1,'pupil','glint','targets')
+save(file1,'pupil','glint','targets', 'dotTimes')
 % load('LTdat.mat','pupil','glint','targets')
 
 %% calculate calibration matrix parameters
