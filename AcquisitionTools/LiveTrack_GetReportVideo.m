@@ -93,7 +93,8 @@ src = getselectedsource(vid);
 % evaluate framerate
 vid.FramesPerTrigger = 30;
 start( vid );
-wait( vid, Inf );
+waitTime = 10; % wait a max of 10 seconds to acquire the 30 frames to determine the framerate
+wait( vid, waitTime );
 [d t] = getdata( vid, vid.FramesAvailable );
 fps =  1 / mean( diff( t ) ) % Verify that FPS is indeed 10
 
@@ -113,13 +114,18 @@ postBufferTime = 5; % 5 seconds
 if GetRawVideo
     rawScriptPath = which('RawVideoRec.scpt');
 end
-    
+
 
 %% record video and data
 if TTLtrigger
     % Prompt user to initialize LiveTrackAV
     fprintf('\n Press spacebar to initialize LiveTrack.');
     pause;
+    
+    %sync GetSecs and gDate
+    RawTiming.syncGetSecs = GetSecs;
+    [~, echo] = system('/usr/local/bin/gdate +%s.%N');
+    RawTiming.syncGDate = str2num(echo);
     
     % Clear reports variable
     [reports] = [0];
@@ -166,7 +172,9 @@ if TTLtrigger
         if firstTTL && Report(end).Digital_IO1 == 1
             if GetRawVideo
                 RawTiming.scriptStarts = GetSecs;
-                system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
+                [status, echo1] = system('/usr/local/bin/gdate +%s.%N');
+                [status, echo2] = system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
+                [status, echo3] = system('/usr/local/bin/gdate +%s.%N');
                 RawTiming.scriptEnds = GetSecs;
                 % note that the video recording begins in the timeframe
                 % between the 2 getsecs. This limits the raw video syncing
@@ -208,14 +216,23 @@ if TTLtrigger
     closepreview(vid);
     save(reportName, 'Report');
     if GetRawVideo
+        % save UnixDate timing info for raw video (gDate)
+        RawTiming.BeforeAppleScript = str2num(echo1);
+        RawTiming.WithinAppleScript = str2num(echo2); %this is not a scalar
+        RawTiming.AfterAppleScript = str2num(echo3);
         save(fullfile(savePath,[RawVidName '_timingInfo']), 'RawTiming');
     end
     fprintf('Matfile and video saved.\n');
-
+    
 else  %manual trigger
     % initialize
     fprintf('\n Press spacebar to initialize LiveTrack.');
-    pause;
+    pause()
+    %sync GetSecs and gDate
+    RawTiming.syncGetSecs = GetSecs;
+    [~, echo] = system('/usr/local/bin/gdate +%s.%N');
+    RawTiming.syncGDate = str2num(echo);
+    
     [reports] = [0];
     PsychHID('SetReport', deviceNumber,2,0,uint8([103 zeros(1,63)]));
     
@@ -224,7 +241,7 @@ else  %manual trigger
     firstTTL = true;
     
     %initialize video ob
-    start(vid); 
+    start(vid);
     
     % Play a sound
     t = linspace(0, 1, 10000);
@@ -233,13 +250,14 @@ else  %manual trigger
     
     
     fprintf('\n Press spacebar to start collecting video and data.');
-    pause;
+    pause();
     fprintf('\n LiveTrack: recording...\n');
     LiveTrackHIDcomm(deviceNumber,'begin');
     if GetRawVideo
         RawTiming.scriptStarts = GetSecs;
-        system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
-        RawTiming.scriptEnds = GetSecs;
+        [status, echo1] = system('/usr/local/bin/gdate +%s.%N');
+        [status, echo2] = system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime+postBufferTime)));
+        [status, echo3] = system('/usr/local/bin/gdate +%s.%N');        RawTiming.scriptEnds = GetSecs;
         % note that the video recording begins in the timeframe
         % between the 2 getsecs. This limits the raw video syncing
         % problem to the Frames with a Report.PsychHIDTime within
@@ -261,7 +279,8 @@ else  %manual trigger
             % check if a TTL pulse is received within the first 30 seconds
             if firstTTL && toc < 30
                 if R(end).Digital_IO1 == 1
-                    fprintf('\n >> First TTL received!')
+                    firstTTLTime = R(end).PsychHIDtime;
+                    fprintf('\n >> First TTL received! - %.20f', firstTTLTime)
                     firstTTL = false;
                 end
             else
@@ -283,7 +302,12 @@ else  %manual trigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+    save(fullfile(savePath,[saveName '_FirstTTLTime']), 'firstTTLTime');
     if GetRawVideo
+        % save UnixDate timing info for raw video (gDate)
+        RawTiming.BeforeAppleScript = str2num(echo1);
+        RawTiming.WithinAppleScript = str2num(echo2); %this is not a scalar
+        RawTiming.AfterAppleScript = str2num(echo3);
         save(fullfile(savePath,[RawVidName '_timingInfo']), 'RawTiming');
     end
     fprintf('Matfile and video saved.\n');

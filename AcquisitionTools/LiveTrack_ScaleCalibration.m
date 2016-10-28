@@ -48,6 +48,7 @@ formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
 
 %% find  and set Livetrack
+closeLiveTrack;
 % locate LiveTrack
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 
@@ -152,3 +153,4 @@ params.cameraUnitsToMmHeightMean = mean(params.cameraUnitsToMmHeight);
 % display the conversion factors
 fprintf('>> Final conversion factor (camera units to mm - width): <strong>%.2f</strong>\n', params.cameraUnitsToMmWidthMean);
 fprintf('>> Final conversion factor (camera units to mm - height): <strong>%.2f</strong>\n', params.cameraUnitsToMmHeightMean);
+closeLiveTrack;

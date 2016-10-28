@@ -1,4 +1,4 @@
-function [pupil, glint, targets, Rpc] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID)
+function [pupil, glint, targets, Rpc, dotTimes] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID)
 
 %% Set default colors
 
@@ -99,6 +99,12 @@ for i = 1:size(calTargets,1)
     
     dataBuf = [];
     gotFix = 0;
+    
+    
+    %%%% GF added on 10/28
+    dotTimes(i) = GetSecs;
+    %%%%%
+    
     tic; % reset fixation timer 
     while ~gotFix,
         
@@ -161,6 +167,11 @@ for i = 1:size(calTargets,1)
         if keyIsDown,
             if keyCode(KbName('Esc'))
                 Screen('CloseAll');
+                
+                %%%% GF added on 10/28
+                closeLiveTrack;
+                %%%%%
+                
                 disp('Esc pressed');
                 error('Esc pressed');
             end
@@ -217,6 +228,13 @@ crsLiveTrackHIDcomm(deviceNumber,'end');
 % LiveTrackHIDstop(deviceNumber);
 
 Screen('CloseAll');
+
+
+%%%% GF added on 10/28
+closeLiveTrack;
+%%%%%
+
+
 
 % Get an estimate for Rpc by using a corner target (where the subject is
 % likely to not be viewing directly into the camera)
