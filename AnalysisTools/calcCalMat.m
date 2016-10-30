@@ -1,7 +1,7 @@
 function [calMat] = calcCalMat(params)
 
-%   Calculates the calibration matrix need to determine gaze location using
-%   eye tracking data
+%   Calculates the calibration matrix needed to determine gaze location 
+%   from pupil and glint values in eye tracking data
 %
 %       The output transformation matrix is used to convert from pixels in 
 %       an eye tracking video to mm on the display screen
