@@ -15,6 +15,6 @@ closepreview(vid);
 
 
 % cleanup
-close(vid)
+delete(vid)
 clear
 close(gcf)

@@ -61,7 +61,7 @@ for ii = 1:length(scaleDiams)
     
     % video name setting
     vidName = fullfile(savePath, [ 'ScaleCalibration_' num2str(scaleDiams(ii)) 'mm_' timestamp '.avi']);
-    RawVidName = fullfile(savePath, [ 'RawScaleCal' num2str(scaleDiams(ii)) 'mm' timestamp '.avi']);
+    RawVidName = ['RawScaleCal' num2str(scaleDiams(ii)) 'mm' timestamp];
     % locate video source (LiveTrack webcam interface)
     vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
     src = getselectedsource(vid);
@@ -149,7 +149,7 @@ for ii = 1:length(scaleDiams)
     params.ReportRaw{ii} = Report;
     
     % clean the video object
-    close(vid)
+    delete(vid)
     close(gcf)
     
     

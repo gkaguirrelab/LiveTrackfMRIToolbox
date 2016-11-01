@@ -314,7 +314,7 @@ else  %manual trigger
 end
 
 % Clean the video object
-close(vid)
+delete(vid)
 close(gcf)
 
 FS.Clear() ;
