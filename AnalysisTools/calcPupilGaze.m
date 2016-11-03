@@ -1,25 +1,32 @@
-function [pupilSize,gaze] = calcPupilFMRI(params)
+function [pupilSize,gaze] = calcPupilGaze(params)
 
 % Calculates the pupil size and gaze position from eye tracking data
-% collected during an fMRI run
 %
 %   Usage:
-%       [pupilSize,gaze] = calcPupilFMRI(params)
+%       [pupilSize,gaze] = calcPupilGaze(params)
 %
 %   If params.trackType == 'LiveTrack' <default>
 %
 %       Required inputs:
 %           params.scaleCalFile     - full path to scale calibration .mat file
 %           params.gazeCalFile      - full path to scale calibration .mat file
-%           params.fMRIMatFile      - full path to fMRI run .mat file
+%           params.eyeTrackFile     - full path to eye tracking .mat file
 %
 %   If params.trackType == 'trackPupil'
 %
 %       Required inputs:
-%           params.scaleCalVideo    - full path to scale calibration .avi movie file
+%           params.scaleCalVideo    - full path to scale calibration .avi video file
 %           params.calTargetFile    - full path to gaze calibration LTdat.mat file
-%           params.gazeCalVideo     - full path to gaze calibration .mov/.avi movie file
-%           params.fMRIVideo        - full path to fMRI run .avi movie file
+%           params.gazeCalVideo     - full path to gaze calibration .mov/.avi video file
+%           params.eyeTrackVideo    - full path to eye tracking .avi video file
+%
+%       Optional inputs:
+%           params.scaleCalOutVideo - full path to output scale calibration video 
+%           params.scaleCalOutMat   - full path to output scale calibration .mat file 
+%           params.gazeCalOutVideo  - full path to output gaze calibration video 
+%           params.gazeCalOutMat    - full path to output gaze calibration .mat file 
+%           params.eyeTrackOutVideo - full path to output eye tracking video 
+%           params.eyeTrackOutMat   - full path to output eye tracking .mat file 
 %
 %   Defaults:
 %       params.scaleSize        - 5;        % calibration dot size (mm)
@@ -83,7 +90,7 @@ end
 %% Get the transformation matrix for gaze
 switch params.trackType
     case 'trackPupil'
-        % Track the pupil and glint in the gaze calibration movie
+        % Track the pupil and glint in the gaze calibration video
         gazeParams.inVideo      = params.gazeCalVideo;
         if isfield(params,'gazeCalOutVideo')
             gazeParams.outVideo = params.gazeCalOutVideo;
@@ -92,7 +99,7 @@ switch params.trackType
             gazeParams.outMat = params.gazeCalOutMat;
         end
         [gazePupil,gazeGlint]   = trackPupil(gazeParams);
-        % The movie is manually stopped, so there is too much video at the end
+        % The video is manually stopped, so there is too much video at the end
         % after the dots are gone
         pad                     = round(params.vidBuffer*length(gazePupil.X));
         gazePupil.X             = gazePupil.X(1:end-pad);
@@ -198,53 +205,53 @@ switch params.trackType
         calParams.rpc           = gazeCal.Rpc;
         calParams.calMat        = gazeCal.CalMat;
 end
-%% Get the pupil size and gaze location from an fMRI run
+%% Get the pupil size and gaze location from an eye tracking video
 switch params.trackType
     case 'trackPupil'
-        runParams.inVideo       = params.fMRIVideo;
-        if isfield(params,'fMRIOutVideo');
-            runParams.outVideo  = params.fMRIOutVideo;
+        eyeParams.inVideo       = params.eyeTrackVideo;
+        if isfield(params,'eyeTrackOutVideo');
+            eyeParams.outVideo  = params.eyeTrackOutVideo;
         end
-        if isfield(params,'fMRIOutMat');
-            runParams.outMat    = params.fMRIOutMat;
+        if isfield(params,'eyeTrackOutMat');
+            eyeParams.outMat    = params.eyeTrackOutMat;
         end
-        [runPupil,runGlint]     = trackPupil(runParams);
-        runParams.pupil.X       = runPupil.X;
-        runParams.pupil.Y       = runPupil.Y;
-        runParams.glint.X       = runGlint.X;
-        runParams.glint.Y       = runGlint.Y;
-        runParams.viewDist      = params.viewDist;
-        runParams.rpc           = calParams.rpc;
-        runParams.calMat        = calParams.calMat;
+        [eyePupil,eyeGlint]     = trackPupil(eyeParams);
+        eyeParams.pupil.X       = eyePupil.X;
+        eyeParams.pupil.Y       = eyePupil.Y;
+        eyeParams.glint.X       = eyeGlint.X;
+        eyeParams.glint.Y       = eyeGlint.Y;
+        eyeParams.viewDist      = params.viewDist;
+        eyeParams.rpc           = calParams.rpc;
+        eyeParams.calMat        = calParams.calMat;
     case 'LiveTrack'
-        fMRImat                 = load(params.fMRIMatFile);
-        runPupil.size           = [];
-        runParams.pupil.X       = [];
-        runParams.pupil.Y       = [];
-        runParams.glint.X       = [];
-        runParams.glint.Y       = [];
-        for i = 1:length(fMRImat.Report)
+        eyeMat                 = load(params.eyeTrackFile);
+        eyePupil.size           = [];
+        eyeParams.pupil.X       = [];
+        eyeParams.pupil.Y       = [];
+        eyeParams.glint.X       = [];
+        eyeParams.glint.Y       = [];
+        for i = 1:length(eyeMat.Report)
             % pupil size
-            runPupil.size       = [runPupil.size;...
-                fMRImat.Report(i).PupilWidth_Ch01;fMRImat.Report(i).PupilWidth_Ch02];
+            eyePupil.size       = [eyePupil.size;...
+                eyeMat.Report(i).PupilWidth_Ch01;eyeMat.Report(i).PupilWidth_Ch02];
             % pupil X
-            runParams.pupil.X       = [runParams.pupil.X;...
-                fMRImat.Report(i).PupilCameraX_Ch01;fMRImat.Report(i).PupilCameraX_Ch02];
+            eyeParams.pupil.X       = [eyeParams.pupil.X;...
+                eyeMat.Report(i).PupilCameraX_Ch01;eyeMat.Report(i).PupilCameraX_Ch02];
             % pupil Y
-            runParams.pupil.Y       = [runParams.pupil.Y;...
-                fMRImat.Report(i).PupilCameraY_Ch01;fMRImat.Report(i).PupilCameraY_Ch02];
+            eyeParams.pupil.Y       = [eyeParams.pupil.Y;...
+                eyeMat.Report(i).PupilCameraY_Ch01;eyeMat.Report(i).PupilCameraY_Ch02];
             % glint X
-            runParams.glint.X       = [runParams.glint.X;...
-                fMRImat.Report(i).Glint1CameraX_Ch01;fMRImat.Report(i).Glint1CameraX_Ch02];
+            eyeParams.glint.X       = [eyeParams.glint.X;...
+                eyeMat.Report(i).Glint1CameraX_Ch01;eyeMat.Report(i).Glint1CameraX_Ch02];
             % glint Y
-            runParams.glint.Y       = [runParams.glint.Y;...
-                fMRImat.Report(i).Glint1CameraY_Ch01;fMRImat.Report(i).Glint1CameraY_Ch02];
+            eyeParams.glint.Y       = [eyeParams.glint.Y;...
+                eyeMat.Report(i).Glint1CameraY_Ch01;eyeMat.Report(i).Glint1CameraY_Ch02];
         end
-        runParams.viewDist      = params.viewDist;
-        runParams.rpc           = calParams.rpc;
-        runParams.calMat        = calParams.calMat;
+        eyeParams.viewDist      = params.viewDist;
+        eyeParams.rpc           = calParams.rpc;
+        eyeParams.calMat        = calParams.calMat;
 end
-runGaze                 = calcGaze(runParams);
+eyeGaze                         = calcGaze(eyeParams);
 %% Set outputs
-pupilSize               = runPupil.size * mmPerPixel;
-gaze                    = runGaze;
+pupilSize                       = eyePupil.size * mmPerPixel;
+gaze                            = eyeGaze;
