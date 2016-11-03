@@ -33,9 +33,9 @@ close all
 clc
 
 % load LiveTrack Report
-LiveTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/TOME_data/session1_restAndStructure/TOME_3004/091916/EyeTracking/rfMRI_REST_AP_run01_report.mat');
+LiveTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/TOME_data/session1_restAndStructure/TOME_3001/081916/EyeTracking/rfMRI_REST_AP_run01_report.mat');
 % load raw tracking data
-RawTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/eyeTrackingVideos/TOME_3004-rfMRI_REST_AP_run01.mat');
+RawTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/eyeTrackingVideos/TOME_3001-rfMRI_REST_AP_run01.mat');
 
 %% Perform a sanity check on the LiveTrack Report
 % check if the frameCount is progressive (i.e. no frame was skipped during
@@ -67,10 +67,10 @@ end
 % similarity and use the 2 most similar signals as reference.
 
 % Raw Track signal (for now, it is a 30 Hz signal)
-RTsignal = RawTrack.glint.XY(1,:);
+RTsignal = RawTrack.glint.XY(2,:);
 
 % Live Track signal.
-LTsignal = ([LiveTrack.Report.Glint1CameraX_Ch01] + [LiveTrack.Report.Glint1CameraX_Ch02]) ./2;
+LTsignal = ([LiveTrack.Report.Glint1CameraY_Ch01] + [LiveTrack.Report.Glint1CameraY_Ch02]) ./2;
 % since Raw tracking is done at 30 Hz, we average the data coming from
 % the two LiveTrack channels for each frame. 
 
@@ -107,19 +107,54 @@ LTsignal(isnan(LTsignal)) = 0 ;
 delay = lag(I); % unit = [number of samples]
 
 % we can now pre-pad the RTsignal to shift it
-RTsignal = padarray(RTsignal,[0,delay],'pre');
+RTaligned = padarray(RTsignal,[0,delay],'pre');
 
 % put back the NaNs
 RTsignal(RTsignal==0) = NaN;
+RTaligned(RTaligned==0) = NaN;
 LTsignal(LTsignal==0) = NaN;
+
 
 %% plot the first 1000 samples of the signals again to show that there is no more delay
 figure()
-plot(RTsignal(1:1000))
+plot(RTaligned)
 hold on
-plot(LTsignal(1:1000))
+plot(LTsignal)
 grid on
 ylabel('X position of the glint (different units)')
 xlabel('Frames')
-legend ('RawTrack', 'LiveTrack')
+legend ('RawTrack aligned', 'LiveTrack')
 title(['Aligned signals (Raw Video delay = ' num2str(delay) ' frames)']);
+
+%% now plot full signals normalized by resolution
+% this is to show more clearly that the signals have been realigned
+
+% define signals resolutions (in pixels)
+RTres = [400 300]; % resolution of the raw video
+LTres = [320 240]; % resolution of the LiveTrack tracking
+
+% normalize the signals according to their native resolution
+RTSnormX = RTsignal / RTres(1);
+RTAnormX = RTaligned / RTres(1);
+LTSnormX = LTsignal / LTres(1);
+
+figure()
+subplot(2,1,1)
+plot(RTSnormX)
+hold on
+plot(LTSnormX)
+grid on
+ylabel('Normalized X position of the glint')
+xlabel('Frames')
+legend ('RawTrack', 'LiveTrack')
+title ('Normalized signals before alignment')
+
+subplot(2,1,2)
+plot(RTAnormX)
+hold on
+plot(LTSnormX)
+grid on
+ylabel('Normalized X position of the glint')
+xlabel('Frames')
+legend ('RawTrack', 'LiveTrack')
+title(['Normalized signals after alignment (Raw Video delay = ' num2str(delay) ' frames)'])
