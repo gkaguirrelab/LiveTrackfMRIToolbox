@@ -76,10 +76,14 @@ LTsignal = ([LiveTrack.Report.Glint1CameraX_Ch01] + [LiveTrack.Report.Glint1Came
 
 
 %% Plot first 1000 frames of the X glint position (this is just for visual inspection)
+% first we remove the signal drops from LTsignal
+LTsignal(LTsignal<100) = NaN;
+
 figure()
 plot(RTsignal(1:1000))
 hold on
 plot(LTsignal(1:1000))
+grid on
 ylabel('X position of the glint (different units)')
 xlabel('Frames')
 legend ('RawTrack', 'LiveTrack')
@@ -93,6 +97,7 @@ title('Reference signal comparison')
 %% Cross correlate the signals to compute the delay
 % cross correlation doesn't work with NaNs, so we change them to zeros
 RTsignal(isnan(RTsignal)) = 0 ;
+LTsignal(isnan(LTsignal)) = 0 ;
 
 % calculate cross correlation and also return the lag array
 [r,lag] = xcorr(LTsignal,RTsignal);
@@ -113,6 +118,7 @@ figure()
 plot(RTsignal(1:1000))
 hold on
 plot(LTsignal(1:1000))
+grid on
 ylabel('X position of the glint (different units)')
 xlabel('Frames')
 legend ('RawTrack', 'LiveTrack')
