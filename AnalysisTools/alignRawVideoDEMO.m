@@ -26,135 +26,109 @@
 % two data streams and make use of cross correlation (Signal Processing
 % Toolbox) to align them and calculate the data stream delay.
 
-
-%% Load data to align
-clear all
-close all
-clc
-
-% load LiveTrack Report
-LiveTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/TOME_data/session1_restAndStructure/TOME_3004/091916/EyeTracking/rfMRI_REST_AP_run01_report.mat');
-% load raw tracking data
-RawTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/eyeTrackingVideos/TOME_3004-rfMRI_REST_AP_run01.mat');
-
-%% Perform a sanity check on the LiveTrack Report
-% check if the frameCount is progressive (i.e. no frame was skipped during
-% data writing)
-frameCountDiff = diff([LiveTrack.Report.frameCount]);
-% note that there could be a frame count reset at the beginning, so it is
-% ok if the frameCountDiff "jumps" once. If it jumps more, it is most
-% likely an undesired skip.
-frameCountJumps = diff(frameCountDiff);
-skips = find(frameCountJumps);
-if length(skips)>1
-    warning('Frame Count is not progressive. Check current LiveTrack Report for integrity')
-end
-
-% further sanity checks for fMRI runs:
-
+%% Set defaults
+% Get user name
+[~, tmpName]            = system('whoami');
+userName                = strtrim(tmpName);
+% Set Dropbox directory
+dbDir                   = ['/Users/' userName '/Dropbox-Aguirre-Brainard-Lab'];
+% Set the subject / session / run
+sessName                = 'session1_restAndStructure';
+subjName                = 'TOME_3007';
+sessDate                = '101116';
+reportName              = 'rfMRI_REST_AP_run01_report.mat';
+videoName               = 'rfMRI_REST_AP_run01_raw.mov';
+outVideoFile            = fullfile('~','testVideo.avi');
+outMatFile              = fullfile('~','testMat.mat');
+numTRs                  = 420;
+ltRes                   = [320 240]; % resolution of the LiveTrack video
+ptRes                   = [400 300]; % resolution of the pupilTrack video
+ltThr                   = 0.1; % threshold for liveTrack glint position
+ylims                   = [0.25 0.75];
+%% Set the session and file names
+sessDir                 = fullfile(dbDir,'TOME_data',sessName,subjName,sessDate,'EyeTracking');
+reportFile              = fullfile(sessDir,reportName);
+videoFile               = fullfile(sessDir,videoName);
+%% Get the LiveTrack and raw video data
+% LiveTrack
+liveTrack               = load(reportFile);
+% pupilTrack
+params.inVideo          = videoFile;
+params.outVideo         = outVideoFile;
+params.outMat           = outMatFile;
+[pupil,glint]           = trackPupil(params);
+%% Perform a sanity checks on the LiveTrack report
+% check if the frameCount is progressive
+frameCountDiff          = unique(diff([liveTrack.Report.frameCount]));
+assert(numel(frameCountDiff)==1,'LiveTrack frame Count is not progressive!');
 % verify that the correct amount of TTLs has been recorded
-[TTLPulses] = CountTTLPulses (LiveTrack.Report);
-
+[TTLPulses]             = CountTTLPulses (liveTrack.Report);
+assert(TTLPulses==numTRs,'LiveTrack TTLs do not match TRs!');
 % verify that the TTLs are correctly spaced, assuming that the acquisition
 % rate is 30 Hz
 
+%%% need to add this sanity check %%%
 
-%% Choose a reference signal to align data
-% We need to choose the most precise LiveTrack measurement to help the
-% aligning accuracy. For now, we use the X position of the glint by
-% default. 
-% POSSIBLE FUTURE DEV: compare each couple of signals, rate their
-% similarity and use the 2 most similar signals as reference.
-
-% Raw Track signal (for now, it is a 30 Hz signal)
-RTsignal = RawTrack.glint.XY(2,:);
-
-% Live Track signal.
-LTsignal = ([LiveTrack.Report.Glint1CameraY_Ch01] + [LiveTrack.Report.Glint1CameraY_Ch02]) ./2;
-% since Raw tracking is done at 30 Hz, we average the data coming from
-% the two LiveTrack channels for each frame. 
-
-
-%% Plot first 1000 frames of the X glint position (this is just for visual inspection)
-% first we remove the signal drops from LTsignal
-LTsignal(LTsignal<60) = NaN;
-
-figure()
-plot(RTsignal(1:1000))
-hold on
-plot(LTsignal(1:1000))
-grid on
-ylabel('X position of the glint (different units)')
-xlabel('Frames')
-legend ('RawTrack', 'LiveTrack')
-title('Reference signal comparison')
-% note that the Raw Track signal development preceeds the LiveTrack's. This
-% is coherent with the fact that the Raw Video acquisition starts later
-% than the LiveTrack Report (i.e. it doesn't have some of the early frames
-% that the Report has). We need to pre-pad the RTsignal to align it with
-% LTsignal.
-
+%% Use the X position of the glint to align data
+% LiveTrack
+%   average the two channels, output is at 30Hz
+ltSignal                = mean([...
+    [liveTrack.Report.Glint1CameraX_Ch01];...
+    [liveTrack.Report.Glint1CameraX_Ch02]]);
+ltNorm                  = ltSignal / ltRes(1);
+% Remove poor tracking
+ltDiff                  = [0 diff(ltNorm)];
+ltNorm(abs(ltDiff) > ltThr)  = nan; % remove glint positions < ltThr
+% pupilTrack
+ptSignal                = glint.X;
+ptNorm                  = (ptSignal / ptRes(1))';
 %% Cross correlate the signals to compute the delay
 % cross correlation doesn't work with NaNs, so we change them to zeros
-RTsignal(isnan(RTsignal)) = 0 ;
-LTsignal(isnan(LTsignal)) = 0 ;
-
-% calculate cross correlation and also return the lag array
-[r,lag] = xcorr(LTsignal,RTsignal);
+ltCorr                  = ltNorm;
+ptCorr                  = ptNorm;
+ltCorr(isnan(ltNorm))   = 0 ;
+ptCorr(isnan(ptNorm))   = 0 ;
+% set vectors to be the same length
+if length(ptCorr) > length(ltCorr)
+    ltNorm              = [ltNorm,zeros(1,(length(ptCorr) - length(ltCorr)))];
+    ltCorr              = [ltCorr,zeros(1,(length(ptCorr) - length(ltCorr)))];
+else
+    ptNorm              = [ptNorm,zeros(1,(length(ltCorr) - length(ptCorr)))];
+    ptCorr              = [ptCorr,zeros(1,(length(ltCorr) - length(ptCorr)))];
+end
+% calculate cross correlation and lag array
+[r,lag]                 = xcorr(ltCorr,ptCorr);
 
 % when cross correlation of the signals is max the lag equals the delay
-[~,I] = max(abs(r));
-delay = lag(I); % unit = [number of samples]
+[~,I]                   = max(abs(r));
+delay                   = lag(I); % unit = [number of samples]
 
-% we can now pre-pad the RTsignal to shift it
-RTaligned = padarray(RTsignal,[0,delay],'pre');
-
-% put back the NaNs
-RTsignal(RTsignal==0) = NaN;
-RTaligned(RTaligned==0) = NaN;
-LTsignal(LTsignal==0) = NaN;
-
-
-%% plot the first 1000 samples of the signals again to show that there is no more delay
-figure()
-plot(RTaligned)
-hold on
-plot(LTsignal)
-grid on
-ylabel('X position of the glint (different units)')
-xlabel('Frames')
-legend ('RawTrack aligned', 'LiveTrack')
-title(['Aligned signals (Raw Video delay = ' num2str(delay) ' frames)']);
-
-%% now plot full signals normalized by resolution
-% this is to show more clearly that the signals have been realigned
-
-% define signals resolutions (in pixels)
-RTres = [400 300]; % resolution of the raw video
-LTres = [320 240]; % resolution of the LiveTrack tracking
-
-% normalize the signals according to their native resolution
-RTSnormX = RTsignal / RTres(1);
-RTAnormX = RTaligned / RTres(1);
-LTSnormX = LTsignal / LTres(1);
-
-figure()
+% shift the signals by the 'delay'
+ltAligned               = ltNorm;
+ltAligned(ltAligned==0) = nan;
+ptAligned               = [zeros(1,delay),ptNorm(1:end-delay)];
+ptAligned(ptAligned==0) = nan;
+%% Plot the results
+fullFigure;
+% before alignment
 subplot(2,1,1)
-plot(RTSnormX, 'LineWidth',2)
-hold on
-plot(LTSnormX, 'LineWidth',2)
+plot(ltNorm, 'LineWidth',2);
+hold on;
+plot(ptNorm, 'LineWidth',2)
 grid on
-ylabel('Normalized X position of the glint')
+ylabel('glint X (normalized)')
 xlabel('Frames')
-legend ('RawTrack', 'LiveTrack')
-title ('Normalized signals before alignment')
-
-subplot(2,1,2)
-plot(RTAnormX, 'LineWidth',2)
-hold on
-plot(LTSnormX, 'LineWidth',2)
+legend ('liveTrack','pupilTrack')
+title ('Before alignment')
+ylim(ylims);
+% after alignment
+subplot(2,1,2);
+plot(ltAligned, 'LineWidth',2);
+hold on;
+plot(ptAligned, 'LineWidth',2)
 grid on
-ylabel('Normalized X position of the glint')
+ylabel('glint X (normalized)')
 xlabel('Frames')
-legend ('RawTrack', 'LiveTrack')
-title(['Normalized signals after alignment (Raw Video delay = ' num2str(delay) ' frames)'])
+legend ('liveTrack','pupilTrack')
+title(['After alignment (shift = ' num2str(delay) ' frames)']);
+ylim(ylims);
