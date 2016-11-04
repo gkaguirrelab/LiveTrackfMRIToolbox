@@ -33,9 +33,9 @@ close all
 clc
 
 % load LiveTrack Report
-LiveTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/TOME_data/session1_restAndStructure/TOME_3001/081916/EyeTracking/rfMRI_REST_AP_run01_report.mat');
+LiveTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/TOME_data/session1_restAndStructure/TOME_3004/091916/EyeTracking/rfMRI_REST_AP_run01_report.mat');
 % load raw tracking data
-RawTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/eyeTrackingVideos/TOME_3001-rfMRI_REST_AP_run01.mat');
+RawTrack = load('/Users/giulia/Dropbox-Aguirre-Brainard-Lab/eyeTrackingVideos/TOME_3004-rfMRI_REST_AP_run01.mat');
 
 %% Perform a sanity check on the LiveTrack Report
 % check if the frameCount is progressive (i.e. no frame was skipped during
@@ -77,7 +77,7 @@ LTsignal = ([LiveTrack.Report.Glint1CameraY_Ch01] + [LiveTrack.Report.Glint1Came
 
 %% Plot first 1000 frames of the X glint position (this is just for visual inspection)
 % first we remove the signal drops from LTsignal
-LTsignal(LTsignal<100) = NaN;
+LTsignal(LTsignal<60) = NaN;
 
 figure()
 plot(RTsignal(1:1000))
@@ -140,9 +140,9 @@ LTSnormX = LTsignal / LTres(1);
 
 figure()
 subplot(2,1,1)
-plot(RTSnormX)
+plot(RTSnormX, 'LineWidth',2)
 hold on
-plot(LTSnormX)
+plot(LTSnormX, 'LineWidth',2)
 grid on
 ylabel('Normalized X position of the glint')
 xlabel('Frames')
@@ -150,9 +150,9 @@ legend ('RawTrack', 'LiveTrack')
 title ('Normalized signals before alignment')
 
 subplot(2,1,2)
-plot(RTAnormX)
+plot(RTAnormX, 'LineWidth',2)
 hold on
-plot(LTSnormX)
+plot(LTSnormX, 'LineWidth',2)
 grid on
 ylabel('Normalized X position of the glint')
 xlabel('Frames')
