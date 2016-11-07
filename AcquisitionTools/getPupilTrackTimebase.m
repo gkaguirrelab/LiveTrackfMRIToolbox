@@ -1,30 +1,18 @@
-%% Align raw tracking data to Report data
+function [timebase] = getPupilTrackTimebase(params)
 
-% This script aims to robustly align the RawTracking data to the TTL onset
-% information provided in the LiveTrack Report.
-
-% The LiveTrack system returns information about pupil size and position,
-% gaze position (60 Hz) and TTL onset (30Hz) in a Report struct. The eye
-% tracking data is not as accurate as we'd like to be, so we use a
-% custom tracking routine to analyze the hi-res tracking video (raw video)
-% acquired concurrently with the LiveTrack data. While the data
-% obtained from the raw video (raw tracking) is much more accurate, it does
-% not contain information about the TTL onset, and can't be directly synced
-% to the TR timing.
-
-% A property of the data acquisition system is that the raw video recording
-% starts with a certain delay with respect to the Report recording. To
-% align TTL information to the raw tracking data we need to calculate the
-% data stream delay.
-
-% We cannot rely on the timestamp provided by PsychToolbox for each field
-% of the Report (i.e. frame) as an absolute time reference because it is
-% assigned when the data is written in the variable, rather then when it is
-% actually acquired by the device.
-
-% We instead look at the signals resulting from the same measurement on the
-% two data streams and make use of cross correlation (Signal Processing
-% Toolbox) to align them and calculate the data stream delay.
+% <Description of what the function does>
+%
+%   Usage:
+%       [timebase] = getPupilTrackTimebase(params)
+%
+%   Required inputs:
+%       params.<fill in this portion>
+%
+%   Defaults:
+%       params.<fill in this portion>
+%
+%
+%   Written by ...
 
 %% Set defaults
 % Get user name
@@ -41,11 +29,7 @@ videoName               = 'rfMRI_REST_AP_run01_raw.mov';
 outVideoFile            = fullfile('~','testVideo.avi');
 outMatFile              = fullfile('~','testMat.mat');
 numTRs                  = 420;
-<<<<<<< HEAD
 ltRes                   = [360 240]; % resolution of the LiveTrack video
-=======
-ltRes                   = [720 480] ./2; % rescaled resolution of the LiveTrack video (originally NTSC DV). Rescale is necessary because pupilTrack video is rescaled.
->>>>>>> master
 ptRes                   = [400 300]; % resolution of the pupilTrack video
 ltThr                   = 0.1; % threshold for liveTrack glint position
 ylims                   = [0.25 0.75];
