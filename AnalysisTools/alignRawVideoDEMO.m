@@ -41,7 +41,11 @@ videoName               = 'rfMRI_REST_AP_run01_raw.mov';
 outVideoFile            = fullfile('~','testVideo.avi');
 outMatFile              = fullfile('~','testMat.mat');
 numTRs                  = 420;
+<<<<<<< HEAD
 ltRes                   = [360 240]; % resolution of the LiveTrack video
+=======
+ltRes                   = [720 480] ./2; % rescaled resolution of the LiveTrack video (originally NTSC DV). Rescale is necessary because pupilTrack video is rescaled.
+>>>>>>> master
 ptRes                   = [400 300]; % resolution of the pupilTrack video
 ltThr                   = 0.1; % threshold for liveTrack glint position
 ylims                   = [0.25 0.75];
