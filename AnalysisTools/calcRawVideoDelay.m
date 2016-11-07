@@ -55,10 +55,10 @@ switch RawTrackRate
         for i = 1:length(LiveTrackReport.Report)
             % First field
             ct                  = ct + 1;
-            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX__Ch01;
+            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX_Ch01;
             % Second field
             ct                  = ct + 1;
-            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX__Ch02;
+            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX_Ch02;
         end
 end
 
@@ -74,4 +74,3 @@ LTsignal(isnan(LTsignal)) = 0 ;
 [~,I] = max(abs(r));
 delay = lag(I); % unit = [number of samples]
 
-%% we can now use [delay] to pre-pad the RTsignal and align it to TTL information 
