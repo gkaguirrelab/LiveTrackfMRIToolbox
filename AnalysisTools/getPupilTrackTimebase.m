@@ -56,11 +56,6 @@ params.outMat           = outMatFile;
 
 
 %%%%%%%%%%%% /THIS WILL GO SOMEWHERE ELSE
-
-% new inputs
-% metadata
-
-
 %% Perform some sanity checks on the LiveTrack report
 % check if the frameCount is progressive
 frameCountDiff          = unique(diff([liveTrack.Report.frameCount]));
