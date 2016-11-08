@@ -9,7 +9,7 @@ function [timeBase] = getPupilTimebase(params)
 % LiveTrack report).
 %
 %   Usage:
-%       [timebase] = getPupilTrackTimebase(params)
+%       [timebase] = getPupilTimebase(params)
 %
 %   Required inputs:
 %       params.outputDir
@@ -29,7 +29,7 @@ function [timeBase] = getPupilTimebase(params)
 % Note that the params field are the same as the metaData fields for a
 % standard pupilResponse struct, so this function can also be used like
 % this:
-%      [timeBase] = getPupilTrackTimebase(metaData)
+%      [timeBase] = getPupilTimebase(metaData)
 % 
 %
 %   Written by Andrew S Bock, Giulia Frazzetta - Nov.2016
