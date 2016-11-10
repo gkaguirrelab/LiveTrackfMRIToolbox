@@ -63,7 +63,7 @@ sessDir                 = fullfile(dropboxDir,params.projectFolder,...
 reportFile              = fullfile(sessDir,[params.runName '_report.mat']);
 
 pupilTrackFile          = fullfile(dropboxDir,params.outputDir,...
-    params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[runName '_pupilTrack.mat']);
+    params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);
 
 
 
@@ -93,7 +93,7 @@ end
 
 %% Use the X position of the glint to align data
 % LiveTrack
-switch param.acqRate
+switch params.acqRate
     case 30
         % average the two channels, output is at 30Hz
         ltSignal                = mean([...
@@ -102,19 +102,19 @@ switch param.acqRate
     case 60
         % use all Report samples
         ct = 0;
-        for i = 1:length(LiveTrackReport.Report)
+        for i = 1:length(liveTrack.Report)
             % First field
             ct                  = ct + 1;
-            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX_Ch01;
+            ltSignal(ct)         = liveTrack.Report(i).Glint1CameraX_Ch01;
             % Second field
             ct                  = ct + 1;
-            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX_Ch02;
+            ltSignal(ct)         = liveTrack.Report(i).Glint1CameraX_Ch02;
         end
 end
 ltNorm                  = ltSignal / params.ltRes(1);
 % Remove poor tracking
 ltDiff                  = [0 diff(ltNorm)];
-ltNorm(abs(ltDiff) > param.ltThr)  = nan; % remove glint positions < ltThr
+ltNorm(abs(ltDiff) > params.ltThr)  = nan; % remove glint positions < ltThr
 % pupilTrack
 ptSignal                = pupilTrack.glint.X;
 ptNorm                  = (ptSignal / params.ptRes(1))';
