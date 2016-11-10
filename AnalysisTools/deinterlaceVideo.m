@@ -1,9 +1,9 @@
-function bobDeinterlacer
+function deinterlaceVideo (params, dropboxDir, bobMode)
 
-% This function allows to deinterlace NTSC DV video, saving out a
-% progressive 60 Hz video.
+% This function allows to deinterlace NTSC DV 30Hz videos, saving out
+% progressive 60 Hz videos, using a "bob deinterlacing" strategy.
 %
-%  These deinterlace strategies are available (bobMode):
+% These deinterlace strategies are available (bobMode):
 % 'Raw'    =  extract 2 fields for every frame. Save progressive video.
 %             Final spatial resolution is half the original resolution.
 % 'Zero'   =  extract 2 fields for every frame. Alternate every row with a
@@ -13,34 +13,55 @@ function bobDeinterlacer
 % 'Mean'   =  extract 2 fields for every frame. Add a row with the mean of
 %             two consecutive rows to preserve aspect ratio.
 
-% References on Bob technique for deinterlacing and on deinterlacing in
+% References on bob technique for deinterlacing and on deinterlacing in
 % general:
 % https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/wp/wp-01117-hd-video-deinterlacing.pdf
 % http://www.100fps.com/
-%% NEED TO TURN THESE INTO INPUTS
-% Get user name
-[~, tmpName]            = system('whoami');
-userName                = strtrim(tmpName);
-dbDir                   = ['/Users/' userName '/Dropbox-Aguirre-Brainard-Lab'];
-% Set the subject / session / run
-sessName                = 'session1_restAndStructure';
-subjName                = 'TOME_3007';
-sessDate                = '101116';
-reportName              = 'rfMRI_REST_AP_run01_report.mat';
-videoName               = 'rfMRI_REST_AP_run01_raw.mov';
-outVideoFile            = fullfile('~','testVideo.avi');
-sessDir                 = fullfile(dbDir,'TOME_data',sessName,subjName,sessDate,'EyeTracking');
+% 
+%   Usage:
+%       deinterlaceVideo (params, dropboxDir, bobMode)
+%
+%   Required inputs:
+%       dbDir
+%       params.outputDir
+%       params.projectFolder
+%       params.projectSubfolder
+%       params.eyeTrackingDir
+%  
+%       params.subjectName
+%       params.sessionDate
+%       params.runName
+%
+% Note that the params field are the same as the metaData fields for a
+% standard pupilResponse struct, so this function can also be used like
+% this:
+%       deinterlaceVideo (metadata, dropboxDir, bobMode)
+% 
+%   Written by Giulia Frazzetta - Nov.2016
 
-nFrames                 = 1000;
 
+%% Set session and file names
+if ~exist('bobMode', 'var')
+    bobMode = 'Mean';
+end
 
-inObj                   = VideoReader(fullfile(sessDir,videoName));
-bobMode                 = 'Mean';
-% bobMode can be Raw,Zero,Duplicate or Mean.
+sessDir = fullfile(dropboxDir,params.projectFolder, params.projectSubfolder, ...
+    params.subjName,params.sessDate,params.eyeTrackingDir);
 
-Bob               = VideoWriter(['/Users/' userName '/Desktop/Bob_' bobMode '.avi']);
-Bob.FrameRate      = 60;
-Bob.Quality        = 100;
+outDir = fullfile(dropboxDir,params.outputDir, params.projectSubfolder, ...
+    params.subjName,params.sessDate,params.eyeTrackingDir);
+
+if ~exist ('outDir', 'dir')
+    mkdir (outDir)
+end
+%% Load video to deinterlace and set parameters for output video file.
+
+inObj = VideoReader(fullfile(sessDir,[params.runName '_raw.mov']));
+nFrames = floor(inObj.Duration*inObj.FrameRate);
+
+Bob = VideoWriter(fullfile(outDir,[params.runName '_60hz.avi']));
+Bob.FrameRate = inObj.FrameRate * 2;
+Bob.Quality = 100;
 
 
 %%
@@ -101,8 +122,7 @@ switch bobMode
             thisFrame       = rgb2gray(tmp);
             oddFields = thisFrame(1:2:end,:);
             evenFields = thisFrame(2:2:end,:);
-            % put means in between rows
-            %oddFields
+            % put means in between rows (odd fields)
             tmp = [oddFields(1,:); ((oddFields(1,:)+oddFields(2,:))/2);oddFields(2,:)];
             for jj = 2 : size(oddFields,1)-1
                 newLines = [mean([oddFields(jj,:);oddFields(jj+1,:)],1);oddFields(jj+1,:)];
@@ -111,7 +131,7 @@ switch bobMode
             oddFields = cat(1,tmp,oddFields(end,:));
             clear tmp
             clear newLines
-            %evenFields
+            % put means in between rows (even fields)
             tmp = [evenFields(1,:); ((evenFields(1,:)+evenFields(2,:))./2);evenFields(2,:)];
             for jj = 2 : size(evenFields,1)-1
                 newLines = [mean([evenFields(jj,:);evenFields(jj+1,:)],1);evenFields(jj+1,:)];
