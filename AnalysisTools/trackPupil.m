@@ -82,6 +82,7 @@ end
 clear RGB inObj
 if isfield(params,'outVideo');
     outObj              = VideoWriter(params.outVideo);
+    outObj.FrameRate    = inObj.FrameRate;
     open(outObj);
 end
 %% Initialize pupil and glint structures
