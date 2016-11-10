@@ -46,8 +46,8 @@ function [timeBase] = getPupilTimebase(params,dropboxDir)
 % params.projectFolder    = 'TOME_data';
 % params.projectSubfolder = 'session1_restAndStructure';
 % params.eyeTrackingDir   = 'EyeTracking';
-% params.subjName         = 'TOME_3007';
-% params.sessDate         = '101116';
+% params.subjectName         = 'TOME_3007';
+% params.sessionDate         = '101116';
 % params.runName          = 'rfMRI_REST_AP_run01';
 % params.numTRs           = 420;
 % param.ltThr             = 0.1; % threshold for liveTrack glint position
@@ -59,11 +59,11 @@ function [timeBase] = getPupilTimebase(params,dropboxDir)
 
 %% Set the session and file names
 sessDir                 = fullfile(dropboxDir,params.projectFolder,...
-    params.projectSubfolder,params.subjName,params.sessDate,params.eyeTrackingDir);
+    params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir);
 reportFile              = fullfile(sessDir,[params.runName '_report.mat']);
 
 pupilTrackFile          = fullfile(dropboxDir,params.outputDir,...
-    params.projectSubfolder,params.subjName,params.sessDate,params.eyeTrackingDir,[runName '_pupilTrack.mat']);
+    params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[runName '_pupilTrack.mat']);
 
 
 

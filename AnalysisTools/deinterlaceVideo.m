@@ -46,10 +46,10 @@ if ~exist('bobMode', 'var')
 end
 
 sessDir = fullfile(dropboxDir,params.projectFolder, params.projectSubfolder, ...
-    params.subjName,params.sessDate,params.eyeTrackingDir);
+    params.subjectName,params.sessionDate,params.eyeTrackingDir);
 
 outDir = fullfile(dropboxDir,params.outputDir, params.projectSubfolder, ...
-    params.subjName,params.sessDate,params.eyeTrackingDir);
+    params.subjectName,params.sessionDate,params.eyeTrackingDir);
 
 if ~exist ('outDir', 'dir')
     mkdir (outDir)
