@@ -65,7 +65,7 @@ Bob.Quality = 100;
 
 
 %%
-progBar = ProgressBar(nFrames,'Making movie...');
+progBar = ProgressBar(nFrames,'Deinterlacing video...');
 open(Bob)
 
 switch bobMode
