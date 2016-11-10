@@ -79,12 +79,14 @@ for i = 1:numFrames
     tmp                 = rgb2gray(thisFrame);
     grayI(:,:,i)        = imresize(tmp,params.imageSize);
 end
-clear RGB inObj
+
 if isfield(params,'outVideo');
     outObj              = VideoWriter(params.outVideo);
     outObj.FrameRate    = inObj.FrameRate;
     open(outObj);
 end
+
+clear RGB inObj
 %% Initialize pupil and glint structures
 pupilRange              = params.pupilRange;
 glintRange              = params.glintRange;
