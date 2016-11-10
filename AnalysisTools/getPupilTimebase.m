@@ -1,4 +1,4 @@
-function [timeBase] = getPupilTimebase(params)
+function [timeBase] = getPupilTimebase(params,dropboxDir)
 
 % This function assigns a timeBase to pupil data obtained using
 % trackPupil.m and to liveTrack data. The timeBase is relative to the TTL
@@ -9,14 +9,14 @@ function [timeBase] = getPupilTimebase(params)
 % LiveTrack report).
 %
 %   Usage:
-%       [timebase] = getPupilTimebase(params)
+%       [timebase] = getPupilTimebase(params, dropboxDir)
 %
 %   Required inputs:
 %       params.outputDir
 %       params.projectFolder
 %       params.projectSubfolder
 %       params.eyeTrackingDir
-%  
+%
 %       params.subjectName
 %       params.sessionDate
 %       params.runName
@@ -25,17 +25,17 @@ function [timeBase] = getPupilTimebase(params)
 %       params.pupilTrackFile
 %       params.ltRes
 %       params.ptRes
-%   
+%
 % Note that the params field are the same as the metaData fields for a
 % standard pupilResponse struct, so this function can also be used like
 % this:
-%      [timeBase] = getPupilTimebase(metaData)
-% 
+%      [timeBase] = getPupilTimebase(metaData, dropboxDir)
+%
 %
 %   Written by Andrew S Bock, Giulia Frazzetta - Nov.2016
 
 %% DEMO - uncomment and run this session for an usage example
-% 
+%
 % % Get user name
 % [~, tmpName]            = system('whoami');
 % userName                = strtrim(tmpName);
@@ -51,18 +51,18 @@ function [timeBase] = getPupilTimebase(params)
 % params.runName          = 'rfMRI_REST_AP_run01';
 % params.numTRs           = 420;
 % param.ltThr             = 0.1; % threshold for liveTrack glint position
-% params.acqRate          = 1/30; % pupilTrack video frameRate in sec
+% params.acqRate          = 30; % pupilTrack video frameRate in Hz
 % params.pupilTrackFile   = ''; %%% <- NEED TO CHANGE THIS FOR DEMO MODE
 % params.ltRes            = [360 240]; % resolution of the LiveTrack video (half original size)
 % params.ptRes            = [400 300]; % resolution of the pupilTrack video
 
 
 %% Set the session and file names
-sessDir                 = fullfile(dbDir,params.projectFolder,...
+sessDir                 = fullfile(dropboxDir,params.projectFolder,...
     params.projectSubfolder,params.subjName,params.sessDate,params.eyeTrackingDir);
 reportFile              = fullfile(sessDir,[params.runName '_report.mat']);
 
-pupilTrackFile          = fullfile(dbDir,params.outputDir,...
+pupilTrackFile          = fullfile(dropboxDir,params.outputDir,...
     params.projectSubfolder,params.subjName,params.sessDate,params.eyeTrackingDir,[runName '_pupilTrack.mat']);
 
 
@@ -75,9 +75,6 @@ end
 % load matFiles
 liveTrack               = load(reportFile);
 pupilTrack              = load(pupilTrackFile);
-
-
-
 
 %% Perform some sanity checks on the LiveTrack report
 % check if the frameCount is progressive
@@ -96,15 +93,28 @@ end
 
 %% Use the X position of the glint to align data
 % LiveTrack
-%   average the two channels, output is at 30Hz
-ltSignal                = mean([...
-    [liveTrack.Report.Glint1CameraX_Ch01];...
-    [liveTrack.Report.Glint1CameraX_Ch02]]);
+switch param.acqRate
+    case 30
+        % average the two channels, output is at 30Hz
+        ltSignal                = mean([...
+            [liveTrack.Report.Glint1CameraX_Ch01];...
+            [liveTrack.Report.Glint1CameraX_Ch02]]);
+    case 60
+        % use all Report samples
+        ct = 0;
+        for i = 1:length(LiveTrackReport.Report)
+            % First field
+            ct                  = ct + 1;
+            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX_Ch01;
+            % Second field
+            ct                  = ct + 1;
+            LTsignal(ct)         = LiveTrackReport.Report(i).Glint1CameraX_Ch02;
+        end
+end
 ltNorm                  = ltSignal / params.ltRes(1);
 % Remove poor tracking
 ltDiff                  = [0 diff(ltNorm)];
 ltNorm(abs(ltDiff) > param.ltThr)  = nan; % remove glint positions < ltThr
-
 % pupilTrack
 ptSignal                = pupilTrack.glint.X;
 ptNorm                  = (ptSignal / params.ptRes(1))';
@@ -144,14 +154,14 @@ allTTLs                 = find([liveTrack.Report.Digital_IO1] == 1);
 % if present, set the first TR to time zero
 if ~isempty(allTTLs)
     firstTR           = allTTLs(1);
-    timeBase.lt       = (timeBaseTMP - firstTR) * params.acqRate; %liveTrack timeBase in [sec]
+    timeBase.lt       = (timeBaseTMP - firstTR) * (1/params.acqRate); %liveTrack timeBase in [sec]
 else
-    timeBase.lt       = (timeBaseTMP - 1) * params.acqRate;
+    timeBase.lt       = (timeBaseTMP - 1) * (1/params.acqRate);
 end
-    timeBase.pt       = timeBase.lt + delay * params.acqRate; %pupilTrack timeBase in [sec]
+timeBase.pt       = timeBase.lt + delay * (1/params.acqRate); %pupilTrack timeBase in [sec]
 
- 
-%% DEMO   - uncomment to check cross correlation quality  
+
+%% DEMO   - uncomment to check cross correlation quality
 % %% Plot the cross correlation results
 % fullFigure;
 % % before alignment
