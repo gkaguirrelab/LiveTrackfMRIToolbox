@@ -67,7 +67,7 @@ end
 stoppreview(vid);
 closepreview(vid);
 % Clean the video object
-delete(vid)
+close(vid)
 close(gcf)
 
 

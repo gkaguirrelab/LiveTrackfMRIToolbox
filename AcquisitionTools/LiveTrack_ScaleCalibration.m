@@ -1,4 +1,4 @@
-function params = LiveTrack_ScaleCalibration(scaleDiams, recTime, savePath)
+function params = LiveTrack_ScaleCalibration(scaleDiams, recTime, savePath,GetRawVideo)
 
 % This function is used to calibrate the size of the pupil tracked with a
 % CRS LiveTrackAV unit. It needs to be run after each session, pointing the
@@ -43,6 +43,9 @@ if ~exist ('savePath', 'var')
     savePath = fullfile('/Users', strtrim(user_name), '/Desktop');
 end
 
+if ~exist ('GetRawVideo', 'var')
+    GetRawVideo = true;
+end
 % set timestamp
 formatOut = 'mmddyy_HHMMSS';
 timestamp = datestr((datetime('now')),formatOut);
@@ -57,8 +60,8 @@ params.pupilDiameterMmGroundTruth = scaleDiams;
 for ii = 1:length(scaleDiams)
     
     % video name setting
-    vidName = fullfile(savePath, [ 'ScaleCalibration_' num2str(scaleDiams(ii)) 'Mm_' timestamp '.avi']);
-    
+    vidName = fullfile(savePath, [ 'ScaleCalibration_' num2str(scaleDiams(ii)) 'mm_' timestamp '.avi']);
+    RawVidName = ['RawScaleCal' num2str(scaleDiams(ii)) 'mm' timestamp];
     % locate video source (LiveTrack webcam interface)
     vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
     src = getselectedsource(vid);
@@ -100,6 +103,10 @@ for ii = 1:length(scaleDiams)
     
     % record calibration video and data
     if recTime == Inf
+        if GetRawVideo
+            rawScriptPath = which('RawVideoRec.scpt');
+            [status, echo2] = system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(1000)));      
+        end
         trigger(vid);
         LiveTrackHIDcomm(deviceNumber,'begin');
         PsychHID('ReceiveReports',deviceNumber);
@@ -112,6 +119,10 @@ for ii = 1:length(scaleDiams)
         fprintf('\n Press spacebar to stop recording.');
         pause;
     else
+        if GetRawVideo
+            rawScriptPath = which('RawVideoRec.scpt');
+            [status, echo2] = system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(recTime)));
+        end
         trigger(vid);
         LiveTrackHIDcomm(deviceNumber,'begin');
         display('LiveTrack: recording...');
