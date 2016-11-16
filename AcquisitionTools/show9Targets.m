@@ -1,12 +1,32 @@
 function [targets,dotTimes] = show9Targets(viewDist, screenSize, Window2ID, FixTime)
-% no livetrack is involved in this function!
-
+% This function uses Psychtoolbox's "Screen" to present 9 Fixation dots on
+% a secondary monitor. The size and position of the dots is related to the
+% viewing distance and the secondary screen size, and it is the same used
+% in LiveTrack_Get9PointFixationDataHID.m 
+% 
+% Target location and presentation times are output at the end of the
+% routine.
+% 
+% Note that NO calibration data is collected by this function.
+% 
+% 
+% Usage
+% 
+% viewDist = 1065;
+% screenSize = 19;
+% Window1ID = 0; 
+% Window2ID = 1;
+% 
+% %%%% Start raw video collection here
+% [targets, dotTimes] = show9Targets(viewDist, screenSize, Window2ID)
+% %%%% Stop raw video collection here
+% 
 %% Set default colors for background and dots
 
 bkground = [255 255 255]; % background color (white)
 dotColor = [0 0 0]; % dot color (black)
 
-%% Fixation parameters
+%% Fixation parameters (same as those used by the LiveTrack)
 if ~exist ('FixTime', 'var')
     FixTime = 3;
 end
@@ -54,13 +74,11 @@ tgtLocs(:,2) = round(calTargets(:,2)*pixPerDeg+cnrTarget(2));
 % Prepare psychToolbox configuration
 PsychImaging('PrepareConfiguration');
 
-% open a full screen window with grey background on stimulus monitor
-
+% open a full screen window with white background on stimulus monitor
 w = PsychImaging('OpenWindow', Window2ID, bkground);
 
-
+% present dots
 for i = 1:size(calTargets,1)
-    % draw new fixation point
     Screen('FillOval', w, dotColor, round([tgtLocs(i,1)-fixRad...
         tgtLocs(i,2)-fixRad tgtLocs(i,1)+fixRad tgtLocs(i,2)+fixRad]));
     Screen('Flip', w);    
