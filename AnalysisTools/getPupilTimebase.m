@@ -58,15 +58,21 @@ function [timeBase] = getPupilTimebase(params,dropboxDir)
 
 
 %% Set the session and file names
-sessDir                 = fullfile(dropboxDir,params.projectFolder,...
-    params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir);
-reportFile              = fullfile(sessDir,[params.runName '_report.mat']);
-
-pupilTrackFile          = fullfile(dropboxDir,params.outputDir,...
-    params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);
-
-
-
+if isfield(params,'projectSubfolder')
+    sessDir                 = fullfile(dropboxDir,params.projectFolder,...
+        params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir);
+    reportFile              = fullfile(sessDir,[params.runName '_report.mat']);
+    
+    pupilTrackFile          = fullfile(dropboxDir,params.outputDir,...
+        params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);
+else
+    sessDir                 = fullfile(dropboxDir,params.projectFolder,...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir);
+    reportFile              = fullfile(sessDir,[params.runName '_report.mat']);
+    
+    pupilTrackFile          = fullfile(dropboxDir,params.outputDir,...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);
+end
 %% load the LiveTrack and raw track data
 % check if data exists
 if ~isfield(params,'pupilTrackFile')

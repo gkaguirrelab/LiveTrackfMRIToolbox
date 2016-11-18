@@ -17,7 +17,7 @@ function deinterlaceVideo (params, dropboxDir, bobMode)
 % general:
 % https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/wp/wp-01117-hd-video-deinterlacing.pdf
 % http://www.100fps.com/
-% 
+%
 %   Usage:
 %       deinterlaceVideo (params, dropboxDir, bobMode)
 %
@@ -27,7 +27,7 @@ function deinterlaceVideo (params, dropboxDir, bobMode)
 %       params.projectFolder
 %       params.projectSubfolder
 %       params.eyeTrackingDir
-%  
+%
 %       params.subjectName
 %       params.sessionDate
 %       params.runName
@@ -36,7 +36,7 @@ function deinterlaceVideo (params, dropboxDir, bobMode)
 % standard pupilResponse struct, so this function can also be used like
 % this:
 %       deinterlaceVideo (metadata, dropboxDir, bobMode)
-% 
+%
 %   Written by Giulia Frazzetta - Nov.2016
 
 
@@ -45,11 +45,19 @@ if ~exist('bobMode', 'var')
     bobMode = 'Mean';
 end
 
-sessDir = fullfile(dropboxDir,params.projectFolder, params.projectSubfolder, ...
-    params.subjectName,params.sessionDate,params.eyeTrackingDir);
-
-outDir = fullfile(dropboxDir,params.outputDir, params.projectSubfolder, ...
-    params.subjectName,params.sessionDate,params.eyeTrackingDir);
+if isfield(params,'projectSubfolder')
+    sessDir = fullfile(dropboxDir,params.projectFolder, params.projectSubfolder, ...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir);
+    
+    outDir = fullfile(dropboxDir,params.outputDir, params.projectSubfolder, ...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir);
+else
+    sessDir = fullfile(dropboxDir,params.projectFolder, ...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir);
+    
+    outDir = fullfile(dropboxDir,params.outputDir, ...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir);
+end
 
 if ~exist ('outDir', 'dir')
     mkdir (outDir)
