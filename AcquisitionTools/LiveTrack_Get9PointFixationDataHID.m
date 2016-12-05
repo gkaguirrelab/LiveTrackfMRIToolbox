@@ -5,6 +5,10 @@ function [pupil, glint, targets, Rpc, dotTimes] = LiveTrack_Get9PointFixationDat
 bkground = [255 255 255]; % background color (white)
 dotColor = [0 0 0]; % dot color (black)
 
+%% Unify kbNames
+
+KbName('UnifyKeyNames'); 
+
 %% Fixation parameters
 
 % Define the diameter of the fixation points (in degrees)
