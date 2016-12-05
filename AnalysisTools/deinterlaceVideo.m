@@ -64,7 +64,11 @@ if ~exist ('outDir', 'dir')
 end
 %% Load video to deinterlace and set parameters for output video file.
 
-inObj = VideoReader(fullfile(sessDir,[params.runName '_raw.mov']));
+inFile = fullfile(sessDir,[params.runName '_raw.mov']);
+if ~exist(inFile,'file')
+    inFile = fullfile(sessDir,[params.runName '.mov']);
+end
+inObj = VideoReader(inFile);
 nFrames = floor(inObj.Duration*inObj.FrameRate);
 
 Bob = VideoWriter(fullfile(outDir,[params.runName '_60hz.avi']));
