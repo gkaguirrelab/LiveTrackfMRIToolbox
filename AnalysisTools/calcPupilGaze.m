@@ -52,6 +52,11 @@ function [pupilSize,gaze] = calcPupilGaze(params)
 %           where both the pupil and glint could not be simultaneously 
 %           tracked
 %
+%       If params.trackType == 'Hybrid'
+%           The input is a "rescaled" version of tracked data obtained with
+%           track pupil, that will be processed as if they were LiveTrack
+%           data. 
+% 
 %   Written by Andrew S Bock Oct 2016
 
 %% set defaults
@@ -82,7 +87,7 @@ switch params.trackType
         scaleParams.pupilOnly   = 1;
         [scalePupil]            = trackPupil(scaleParams);
         mmPerPixel              = params.scaleSize / median(scalePupil.size);
-    case 'LiveTrack'
+    case {'LiveTrack','Hybrid'}
         scaleCal                = load(params.scaleCalFile);
         [maxVal,maxInd]         = max(scaleCal.ScaleCal.pupilDiameterMmGroundTruth);
         mmPerPixel              = maxVal / median([scaleCal.ScaleCal.ReportRaw{maxInd}.PupilWidth_Ch01]);
@@ -200,7 +205,7 @@ switch params.trackType
             plot(calGaze.X(i),calGaze.Y(i),'bx');
             plot([targets(i,1) calGaze.X(i)], [targets(i,2) calGaze.Y(i)],'g');
         end
-    case 'LiveTrack'
+    case {'LiveTrack','Hybrid'}
         gazeCal                 = load(params.gazeCalFile);
         calParams.rpc           = gazeCal.Rpc;
         calParams.calMat        = gazeCal.CalMat;
@@ -250,6 +255,13 @@ switch params.trackType
         eyeParams.viewDist      = params.viewDist;
         eyeParams.rpc           = calParams.rpc;
         eyeParams.calMat        = calParams.calMat;
+    case 'Hybrid'
+        eyeMat                  = load(params.eyeTrackFile);
+        eyePupil.size           = eyeMat.RescaledPupil.size;
+        eyeParams.pupil.X       = eyeMat.RescaledPupil.X;
+        eyeParams.pupil.Y       = eyeMat.RescaledPupil.Y;
+        eyeParams.glint.X       = eyeMat.RescaledGlint.X;
+        eyeParams.glint.Y       = eyeMat.RescaledGlint.Y; 
 end
 eyeGaze                         = calcGaze(eyeParams);
 %% Set outputs
