@@ -4,7 +4,7 @@ function [RescaledPupil,RescaledGlint] = rescale4calibration(params,dropboxDir)
 
 
 % %% DEMO - uncomment and run this session for an usage example
-% 
+%
 % % Get user name
 % [~, tmpName]            = system('whoami');
 % userName                = strtrim(tmpName);
@@ -18,7 +18,7 @@ function [RescaledPupil,RescaledGlint] = rescale4calibration(params,dropboxDir)
 % params.subjectName      = 'TOME_3008';
 % params.sessionDate      = '103116';
 % params.runName          = 'tfMRI_MOVIE_AP_run02';
-% 
+%
 % params.ltRes            = [720 480] ./2; % resolution of the LiveTrack video (half original size)
 % params.ptRes            = [400 300]; % resolution of the pupilTrack video
 
@@ -29,14 +29,14 @@ if ~isfield(params,'ltRes')
     params.ltRes = [720 480] ./2;
 end
 
-if ~isfield(params,'ltRes')
-    params.ltRes = [400 300];
+if ~isfield(params,'ptRes')
+    params.ptRes = [400 300];
 end
 
 %% Set the session and file names
 if isfield(params,'projectSubfolder')
     pupilTrackFile = fullfile(dropboxDir,params.outputDir,...
-        params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);    
+        params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);
 else
     pupilTrackFile = fullfile(dropboxDir,params.outputDir,...
         params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_pupilTrack.mat']);
@@ -66,8 +66,8 @@ RescaledGlint.Y = (glint.Y ./ params.ptRes(2) - yCoeff) *params.ltRes(2);
 
 if isfield(params,'projectSubfolder')
     save (fullfile(dropboxDir,params.outputDir,...
-        params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_rescaledPupil.mat']),RescaledPupil,RescaledGlint);
+        params.projectSubfolder,params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_rescaledPupil.mat']),'RescaledPupil','RescaledGlint');
 else
-save (fullfile(dropboxDir,params.outputDir,...
-        params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_rescaledPupil.mat']),RescaledPupil,RescaledGlint);
+    save (fullfile(dropboxDir,params.outputDir,...
+        params.subjectName,params.sessionDate,params.eyeTrackingDir,[params.runName '_rescaledPupil.mat']),'RescaledPupil','RescaledGlint');
 end
