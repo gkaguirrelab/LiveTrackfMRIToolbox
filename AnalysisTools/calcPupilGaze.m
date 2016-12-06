@@ -262,6 +262,9 @@ switch params.trackType
         eyeParams.pupil.Y       = eyeMat.RescaledPupil.Y;
         eyeParams.glint.X       = eyeMat.RescaledGlint.X;
         eyeParams.glint.Y       = eyeMat.RescaledGlint.Y; 
+        eyeParams.viewDist      = params.viewDist;
+        eyeParams.rpc           = calParams.rpc;
+        eyeParams.calMat        = calParams.calMat;
 end
 eyeGaze                         = calcGaze(eyeParams);
 %% Set outputs
