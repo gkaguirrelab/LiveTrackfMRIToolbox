@@ -117,7 +117,7 @@ for i = 1:numFrames
     pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
     % Binarize pupil
     binP                = ones(size(pI));
-    binP(pI<quantile(double(pI(:)),params.threshVals(1)))   = 0;
+    binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
     % Filter for glint
     gI                  = ones(size(I));
     gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
@@ -134,7 +134,7 @@ for i = 1:numFrames
         'Sensitivity',params.sensitivity);
     % Find the glint
     if ~params.pupilOnly
-        [gCenters, gRadii]  = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
+        [gCenters, gRadii]      = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
             'Sensitivity',params.sensitivity);
     end
     switch params.pupilOnly
@@ -160,8 +160,8 @@ for i = 1:numFrames
                 pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                 pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
             else
-                pupilRange(1)           = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-                pupilRange(2)           = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
+                pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+                pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
             end
         case 1
             if ~isempty(pCenters)
@@ -174,8 +174,8 @@ for i = 1:numFrames
                 pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                 pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
             else
-                pupilRange(1)           = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-                pupilRange(2)           = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
+                pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+                pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
             end
     end
     if isfield(params,'outVideo');
