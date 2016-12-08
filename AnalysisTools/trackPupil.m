@@ -24,7 +24,7 @@ function [pupil,glint] = trackPupil(params)
 %       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame
 %       params.threshVals   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
 %       params.imageSize    = [300 400];    % used to resize input video
-%       params.pupilRange   = [10 100];     % initial pupil size range
+%       params.pupilRange   = [10 70];     % initial pupil size range
 %       params.glintRange   = [10 30];      % constant glint size range
 %       params.glintOut     = 0.1;          % proportion outside of pupil glint is allowed to be. Higher = more outside
 %       params.sensitivity  = 0.99;         % [0 1] - sensitivity for 'imfindcircles'. Higher = more circles found
@@ -44,7 +44,7 @@ if ~isfield(params,'imageSize');
     params.imageSize    = [300 400];
 end
 if ~isfield(params,'pupilRange');
-    params.pupilRange   = [10 100];
+    params.pupilRange   = [10 70];
 end
 if ~isfield(params,'glintRange');
     params.glintRange   = [10 30];
