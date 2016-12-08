@@ -24,7 +24,7 @@ function [pupil,glint] = trackPupil(params)
 %       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame
 %       params.threshVals   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
 %       params.imageSize    = [300 400];    % used to resize input video
-%       params.pupilRange   = [10 100];     % initial pupil size range
+%       params.pupilRange   = [10 70];     % initial pupil size range
 %       params.glintRange   = [10 30];      % constant glint size range
 %       params.glintOut     = 0.1;          % proportion outside of pupil glint is allowed to be. Higher = more outside
 %       params.sensitivity  = 0.99;         % [0 1] - sensitivity for 'imfindcircles'. Higher = more circles found
@@ -44,7 +44,7 @@ if ~isfield(params,'imageSize');
     params.imageSize    = [300 400];
 end
 if ~isfield(params,'pupilRange');
-    params.pupilRange   = [10 100];
+    params.pupilRange   = [10 70];
 end
 if ~isfield(params,'glintRange');
     params.glintRange   = [10 30];
@@ -117,7 +117,7 @@ for i = 1:numFrames
     pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
     % Binarize pupil
     binP                = ones(size(pI));
-    binP(pI<quantile(double(pI(:)),params.threshVals(1)))   = 0;
+    binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
     % Filter for glint
     gI                  = ones(size(I));
     gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
@@ -134,7 +134,7 @@ for i = 1:numFrames
         'Sensitivity',params.sensitivity);
     % Find the glint
     if ~params.pupilOnly
-        [gCenters, gRadii]  = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
+        [gCenters, gRadii]      = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
             'Sensitivity',params.sensitivity);
     end
     switch params.pupilOnly
@@ -159,6 +159,9 @@ for i = 1:numFrames
                 end
                 pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                 pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
+            else
+                pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+                pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
             end
         case 1
             if ~isempty(pCenters)
@@ -170,12 +173,10 @@ for i = 1:numFrames
                 end
                 pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                 pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
+            else
+                pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+                pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
             end
-    end
-    % Adjust range if pupil is not found
-    if ~isempty(pCenters)
-        pupilRange(1)           = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-        pupilRange(2)           = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
     end
     if isfield(params,'outVideo');
         frame                   = getframe(ih);
