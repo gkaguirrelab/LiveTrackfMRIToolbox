@@ -159,6 +159,9 @@ for i = 1:numFrames
                 end
                 pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                 pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
+            else
+                pupilRange(1)           = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+                pupilRange(2)           = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
             end
         case 1
             if ~isempty(pCenters)
@@ -170,12 +173,10 @@ for i = 1:numFrames
                 end
                 pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                 pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
+            else
+                pupilRange(1)           = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+                pupilRange(2)           = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
             end
-    end
-    % Adjust range if pupil is not found
-    if ~isempty(pCenters)
-        pupilRange(1)           = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-        pupilRange(2)           = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
     end
     if isfield(params,'outVideo');
         frame                   = getframe(ih);
