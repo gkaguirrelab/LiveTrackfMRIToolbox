@@ -53,5 +53,5 @@ gaze.Y                  = tmp(:,2);
 % note tmp(:,3) is the viewing distance
 %% Convert to eccentricty and polar angle
 [tmppol,tmpecc]         = cart2pol(gaze.X,gaze.Y);
-gaze.ecc                = rad2deg(calc_visual_angle(tmpecc,params.viewDist))';
+gaze.ecc                = rad2deg(atan(tmpecc./params.viewDist))';
 gaze.pol                = mod(rad2deg( ((2*pi) - tmppol) + pi),360)';
