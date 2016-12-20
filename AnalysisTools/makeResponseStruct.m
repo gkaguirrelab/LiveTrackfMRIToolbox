@@ -11,14 +11,28 @@ switch params.trackType
         rescale4calibration(runParams,dropboxDir);
         
         % calibrate
+        calParams.trackType = params.trackType;
         calParams.eyeTrackFile =  fullfile(dropboxDir,runParams.outputDir,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,...
             [runParams.runName '_rescaledPupil.mat']);
         calParams.scaleCalFile = fullfile(dropboxDir,runParams.projectFolder,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.scaleCalName);
-        calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,runParams.projectSubfolder,...
-            runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);
-        calParams.trackType = params.trackType;
+        % for early session 1 that do not have a Gaze Cal.
+        if isfield(runParams,'gazeCalName')
+          calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,runParams.projectSubfolder,...
+            runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);   
+        else
+            warning('No gaze calibration file found for this session. Will use the first calibration file available from the subject''s session 2.')
+            % look for Gaze Calibration files in session 2
+            GazeCals = dir(fullfile(dropboxDir, params.projectFolder, params.projectSubfolderTwo, ...
+                params.subjectName,params.sessionTwoDate,params.eyeTrackingDir,'*LTcal*.mat'));
+            % sort Gaze Calibration files by timestamp
+            [~,idx] = sort([GazeCals.datenum]);
+            % take the first GazeCal file
+            calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,params.projectSubfolderTwo,...
+                runParams.subjectName,params.sessionTwoDate,runParams.eyeTrackingDir,GazeCals(idx(1)).name);
+        end
+        
         [pupilSize,gaze] = calcPupilGaze(calParams);
         
         % load timeBase file
@@ -29,7 +43,7 @@ switch params.trackType
             load (timeBaseFile);
         else
             warning ('Run skipped because no timebase file was found');
-            response = 0;
+            response = '';
             return
         end
         
