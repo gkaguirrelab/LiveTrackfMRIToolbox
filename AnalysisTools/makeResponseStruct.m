@@ -47,14 +47,34 @@ switch params.trackType
             return
         end
         
-        % assemble response struct
+        % assemble response struct values
         response.pupilSize = pupilSize';
         response.gazeEcc = gaze.ecc;
         response.gazePol = gaze.pol;
+        response.gazeX = gaze.X;
+        response.gazeY = gaze.Y;
         response.timeBase = timeBase.pt;
+        
+        % metadata
         response.metadata = runParams;
-        response.metadata.eyeTrackFile = calParams.eyeTrackFile;
-        response.metadata.scaleCalFile = calParams.scaleCalFile;
-        response.metadata.gazeCalFile = calParams.gazeCalFile;
+        response.metadata.eyeTrackFile = fullfile(runParams.outputDir,runParams.projectSubfolder,...
+            runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,...
+            [runParams.runName '_rescaledPupil.mat']);
+        response.metadata.scaleCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
+            runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.scaleCalName);
+        response.metadata.gazeCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
+            runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);
         response.metadata.trackType = calParams.trackType;
+        
+       % git info
+       % LiveTrack toolbox
+       fCheck = which('GetGitInfo');
+       if ~isempty(fCheck)
+           thePath = fileparts(mfilename('fullpath'));
+           gitInfo = GetGITInfo(thePath);
+       else
+           gitInfo = 'function ''GetGITInfo'' not found';
+       end
+      response.metadata.gitInfo = gitInfo;
+      
 end
