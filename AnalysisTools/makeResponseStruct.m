@@ -31,6 +31,7 @@ switch params.trackType
             % take the first GazeCal file
             calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,params.projectSubfolderTwo,...
                 runParams.subjectName,params.sessionTwoDate,runParams.eyeTrackingDir,GazeCals(idx(1)).name);
+            runParams.gazeCalName = GazeCals(idx(1)).name;
         end
         
         [pupilSize,gaze] = calcPupilGaze(calParams);
