@@ -52,9 +52,14 @@ switch params.trackType
         response.pupilSize = pupilSize';
         response.gazeEcc = gaze.ecc;
         response.gazePol = gaze.pol;
-        response.gazeX = gaze.X;
-        response.gazeY = gaze.Y;
+        response.gazeX = gaze.X';
+        response.gazeY = gaze.Y';
         response.timeBase = timeBase.pt;
+        
+        % check that the timebase and the response are the same length
+        if length(response.pupilSize)~=length(response.timeBase)
+            warning ('Timebase and response values are not of the same length')
+        end
         
         % metadata
         response.metadata = runParams;
