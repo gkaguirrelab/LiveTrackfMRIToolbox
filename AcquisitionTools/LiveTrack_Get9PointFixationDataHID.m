@@ -1,5 +1,5 @@
 function [pupil, glint, targets, Rpc, dotTimes] = LiveTrack_Get9PointFixationDataHID(deviceNumber, viewDist, screenSize, NoOfGlints, Window1ID, Window2ID)
-
+Screen('Preference', 'SkipSyncTests', 1)
 %% Set default colors
 
 bkground = [255 255 255]; % background color (white)

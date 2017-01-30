@@ -22,7 +22,7 @@ function params = LiveTrack_ScaleCalibration(scaleDiams, recTime, savePath,GetRa
 % - collect the calibration videos (suggested length: 10 seconds)
 
 
-% May 2016 - Giulia Frazzetta, Manuel Spitschan: written 
+% May 2016 - Giulia Frazzetta, Manuel Spitschan: written
 % July 2016 - GF : updated
 
 %% Set variables
@@ -63,7 +63,10 @@ for ii = 1:length(scaleDiams)
     vidName = fullfile(savePath, [ 'ScaleCalibration_' num2str(scaleDiams(ii)) 'mm_' timestamp '.avi']);
     RawVidName = ['RawScaleCal' num2str(scaleDiams(ii)) 'mm' timestamp];
     % locate video source (LiveTrack webcam interface)
-    vid = videoinput('macvideo', 1, 'YUY2_320x240'); %'YCbCr422_1280x720') %;
+    LTcameraID = 'YCbCr422_320x240'; % on new laptop
+    % LTcameraID = 'YUY2_320x240'; % on old laptop
+    [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
+    vid = videoinput('macvideo', 1, LTcameraID); %'YCbCr422_1280x720') %;
     src = getselectedsource(vid);
     
     % prompt the user to adjust the camera over the correct target and
@@ -105,7 +108,7 @@ for ii = 1:length(scaleDiams)
     if recTime == Inf
         if GetRawVideo
             rawScriptPath = which('RawVideoRec.scpt');
-            [status, echo2] = system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(1000)));      
+            [status, echo2] = system(sprintf(['osascript ' rawScriptPath ' %s %s %s'], savePath, RawVidName, num2str(1000)));
         end
         trigger(vid);
         LiveTrackHIDcomm(deviceNumber,'begin');

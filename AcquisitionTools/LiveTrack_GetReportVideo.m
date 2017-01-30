@@ -87,7 +87,9 @@ closeLiveTrack;
 [deviceNumber, type] = crsLiveTrackGetHIDdeviceNumber;
 
 % video recording settings
-vid = videoinput('macvideo', 1, 'YUY2_320x240');
+LTcameraID = 'YCbCr422_320x240'; % on new laptop
+% LTcameraID = 'YUY2_320x240'; % on old laptop
+vid = videoinput('macvideo', 1, LTcameraID);
 src = getselectedsource(vid);
 
 % evaluate framerate
@@ -302,7 +304,9 @@ else  %manual trigger
     stoppreview(vid);
     closepreview(vid);
     save(reportName, 'Report');
+if exist('firstTTLTime','var')
     save(fullfile(savePath,[saveName '_FirstTTLTime']), 'firstTTLTime');
+end
     if GetRawVideo
         % save UnixDate timing info for raw video (gDate)
         RawTiming.BeforeAppleScript = str2num(echo1);
