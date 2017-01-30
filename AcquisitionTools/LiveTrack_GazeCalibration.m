@@ -70,7 +70,7 @@ save(file1,'pupil','glint','targets', 'dotTimes')
 
 %% calculate calibration matrix parameters
 disp(' ');
-disp('Please wait while data is beeing calibrated...');
+disp('Please wait while data is being calibrated...');
 disp(' ');
 CalMat = crsLiveTrackCalculateCalibrationMatrix(pupil, glint, targets, viewDist, Rpc);
 
