@@ -19,19 +19,36 @@ switch params.trackType
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.scaleCalName);
         % for early session 1 that do not have a Gaze Cal.
         if isfield(runParams,'gazeCalName')
-          calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,runParams.projectSubfolder,...
-            runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);   
+            calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,runParams.projectSubfolder,...
+                runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);
         else
             warning('No gaze calibration file found for this session. Will use the first calibration file available from the subject''s session 2.')
             % look for Gaze Calibration files in session 2
             GazeCals = dir(fullfile(dropboxDir, params.projectFolder, params.projectSubfolderTwo, ...
                 params.subjectName,params.sessionTwoDate,params.eyeTrackingDir,'*LTcal*.mat'));
+            GazeData = dir(fullfile(dropboxDir, params.projectFolder, params.projectSubfolderTwo, ...
+                params.subjectName,params.sessionTwoDate,params.eyeTrackingDir,'*LTdat*.mat'));
             % sort Gaze Calibration files by timestamp
             [~,idx] = sort([GazeCals.datenum]);
-            % take the first GazeCal file
-            calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,params.projectSubfolderTwo,...
-                runParams.subjectName,params.sessionTwoDate,runParams.eyeTrackingDir,GazeCals(idx(1)).name);
-            runParams.gazeCalName = GazeCals(idx(1)).name;
+            [~,idx2] = sort([GazeData.datenum]);
+            % check if the calibration are good
+            for ii = 1: length(idx)
+                LTdatFile = fullfile(dropboxDir, params.projectFolder, params.projectSubfolderTwo, ...
+                    params.subjectName,params.sessionTwoDate,params.eyeTrackingDir,GazeData(idx2(ii)).name);
+                LTcalFile = fullfile(dropboxDir, params.projectFolder, params.projectSubfolderTwo, ...
+                    params.subjectName,params.sessionTwoDate,params.eyeTrackingDir,GazeCals(idx(ii)).name);
+                isGood(idx(ii)) = checkGazeCal(LTdatFile,LTcalFile);
+            end
+            % take the first good GazeCal file
+            for ii = 1: length(idx)
+                if isGood(idx(ii))
+                    calParams.gazeCalFile = fullfile(dropboxDir,runParams.projectFolder,params.projectSubfolderTwo,...
+                        runParams.subjectName,params.sessionTwoDate,runParams.eyeTrackingDir,GazeCals(idx(ii)).name);
+                    runParams.gazeCalName = GazeCals(idx(ii)).name;
+                else
+                    continue
+                end
+            end
         end
         
         [pupilSize,gaze] = calcPupilGaze(calParams);
@@ -72,15 +89,15 @@ switch params.trackType
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);
         response.metadata.trackType = calParams.trackType;
         
-       % git info
-       % LiveTrack toolbox
-       fCheck = which('GetGitInfo');
-       if ~isempty(fCheck)
-           thePath = fileparts(mfilename('fullpath'));
-           gitInfo = GetGITInfo(thePath);
-       else
-           gitInfo = 'function ''GetGITInfo'' not found';
-       end
-      response.metadata.gitInfo = gitInfo;
-      
+        % git info
+        % LiveTrack toolbox
+        fCheck = which('GetGitInfo');
+        if ~isempty(fCheck)
+            thePath = fileparts(mfilename('fullpath'));
+            gitInfo = GetGITInfo(thePath);
+        else
+            gitInfo = 'function ''GetGITInfo'' not found';
+        end
+        response.metadata.gitInfo = gitInfo;
+        
 end

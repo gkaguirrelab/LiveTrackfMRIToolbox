@@ -56,4 +56,6 @@ gaze.Y                  = tmp(:,2);
 for ii = 1:length(gaze.X)
     [gaze.ecc(ii), gaze.pol(ii)] = liveTrackCartToPol(gaze.X(ii),gaze.Y(ii),params.viewDist);
 end
+gaze.ecc = gaze.ecc';
+gaze.pol = gaze.pol';
 
