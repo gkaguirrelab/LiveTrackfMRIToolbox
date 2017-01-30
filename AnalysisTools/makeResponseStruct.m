@@ -71,7 +71,7 @@ switch params.trackType
         response.gazePol = gaze.pol;
         response.gazeX = gaze.X';
         response.gazeY = gaze.Y';
-        response.timeBase = timeBase.pt;
+        response.timebase = timeBase.pt;
         
         % check that the timebase and the response are the same length
         if length(response.pupilSize)~=length(response.timeBase)
@@ -79,15 +79,15 @@ switch params.trackType
         end
         
         % metadata
-        response.metadata = runParams;
-        response.metadata.eyeTrackFile = fullfile(runParams.outputDir,runParams.projectSubfolder,...
+        response.metaData = runParams;
+        response.metaData.eyeTrackFile = fullfile(runParams.outputDir,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,...
             [runParams.runName '_rescaledPupil.mat']);
-        response.metadata.scaleCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
+        response.metaData.scaleCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.scaleCalName);
-        response.metadata.gazeCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
+        response.metaData.gazeCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.gazeCalName);
-        response.metadata.trackType = calParams.trackType;
+        response.metaData.trackType = calParams.trackType;
         
         % git info
         % LiveTrack toolbox
@@ -98,6 +98,6 @@ switch params.trackType
         else
             gitInfo = 'function ''GetGITInfo'' not found';
         end
-        response.metadata.gitInfo = gitInfo;
+        response.metaData.gitInfo = gitInfo;
         
 end
