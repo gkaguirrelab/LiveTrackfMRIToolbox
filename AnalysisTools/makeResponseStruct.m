@@ -74,7 +74,7 @@ switch params.trackType
         response.timebase = timeBase.pt;
         
         % check that the timebase and the response are the same length
-        if length(response.pupilSize)~=length(response.timeBase)
+        if length(response.pupilSize)~=length(response.timebase)
             warning ('Timebase and response values are not of the same length')
         end
         
