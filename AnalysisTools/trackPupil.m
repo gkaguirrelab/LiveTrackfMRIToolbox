@@ -56,7 +56,7 @@ if ~isfield(params,'sensitivity');
     params.sensitivity  = 0.99;
 end
 if ~isfield(params,'dilateGlint');
-    params.dilateGlint  = 6;
+    params.dilateGlint  = 10;
 end
 if ~isfield(params,'pupilOnly');
     params.pupilOnly    = 0;
