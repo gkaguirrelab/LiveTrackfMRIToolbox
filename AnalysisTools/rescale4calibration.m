@@ -56,11 +56,11 @@ sizeCoeff = 0.0117 ;
 xCoeff = 0.001;
 yCoeff = 0.001;
 
-RescaledPupil.size = (pupil.size ./ params.ptRes(1) - sizeCoeff) *params.ltRes(1);
-RescaledPupil.X = (pupil.X ./ params.ptRes(1) - xCoeff) *params.ltRes(1);
-RescaledPupil.Y = (pupil.Y ./ params.ptRes(2) - yCoeff) *params.ltRes(2);
-RescaledGlint.X = (glint.X ./ params.ptRes(1) - xCoeff) *params.ltRes(1);
-RescaledGlint.Y = (glint.Y ./ params.ptRes(2) - yCoeff) *params.ltRes(2);
+RescaledPupil.size = pupil.size * 0.9; 
+RescaledPupil.X = pupil.X ;
+RescaledPupil.Y = pupil.Y ;
+RescaledGlint.X = glint.X;
+RescaledGlint.Y = glint.Y ;
 
 %% save out rescaled pupil track
 
