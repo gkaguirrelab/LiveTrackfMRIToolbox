@@ -1,9 +1,11 @@
-function [pupil,glint] = trackPupil(params)
+function [pupil,glint, params] = trackPupil(params)
 
 % Tracks the pupil using an input video file, write out an .avi video
+% By default, the video is resized and cropped to have the same aspect
+% ratio and size of the original LiveTrack video input.
 %
 %   Usage:
-%       [pupil,glint]       = trackPupil(params)
+%       [pupil,glint,params]       = trackPupil(params)
 %
 %   Required input:
 %       params.inVideo      = '/path/to/inputFile';
@@ -23,8 +25,8 @@ function [pupil,glint] = trackPupil(params)
 %   Defaults:
 %       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame
 %       params.threshVals   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
-%       params.imageSize    = [300 400];    % used to resize input video
-%       params.pupilRange   = [10 70];     % initial pupil size range
+%       params.imageSize    = [486 720]/2;; % used to resize input video
+%       params.pupilRange   = [10 70];      % initial pupil size range
 %       params.glintRange   = [10 30];      % constant glint size range
 %       params.glintOut     = 0.1;          % proportion outside of pupil glint is allowed to be. Higher = more outside
 %       params.sensitivity  = 0.99;         % [0 1] - sensitivity for 'imfindcircles'. Higher = more circles found
@@ -32,36 +34,38 @@ function [pupil,glint] = trackPupil(params)
 %       params.pupilOnly    = 0;            % if 1, no glint is required
 %
 %   Written by Andrew S Bock Sep 2016
+%   Edited by Giulia Frazzetta Feb 2017 : changed default video size, added
+%   ellipse option, output eyetracking params.
 
 %% set defaults
-if ~isfield(params,'rangeAdjust');
+if ~isfield(params,'rangeAdjust')
     params.rangeAdjust  = 0.05;
 end
-if ~isfield(params,'threshVals');
+if ~isfield(params,'threshVals')
     params.threshVals   = [0.05 0.999];
 end
-if ~isfield(params,'imageSize');
+if ~isfield(params,'imageSize')
     params.imageSize    = [486 720]/2;
 end
-if ~isfield(params,'pupilRange');
+if ~isfield(params,'pupilRange')
     params.pupilRange   = [10 70];
 end
-if ~isfield(params,'glintRange');
+if ~isfield(params,'glintRange')
     params.glintRange   = [10 30];
 end
-if ~isfield(params,'glintOut');
+if ~isfield(params,'glintOut')
     params.glintOut     = 0.1;
 end
-if ~isfield(params,'sensitivity');
+if ~isfield(params,'sensitivity')
     params.sensitivity  = 0.99;
 end
-if ~isfield(params,'dilateGlint');
+if ~isfield(params,'dilateGlint')
     params.dilateGlint  = 10;
 end
-if ~isfield(params,'pupilOnly');
+if ~isfield(params,'pupilOnly')
     params.pupilOnly    = 0;
 end
-if ~isfield(params,'pupilFit');
+if ~isfield(params,'pupilFit')
     params.pupilFit    = 'circle';
 end
 
@@ -88,15 +92,12 @@ end
 
 clear RGB inObj
 
-%% DEV: overwrite number of frames
-% numFrames = 2000;
-
 %% Initialize pupil and glint structures
 
 switch params.pupilFit
     case 'circle'
         % Create filter parameters
-        filtSize                = round([0.01*min(params.imageSize) 0.01*min(params.imageSize) 0.01*min(params.imageSize)]);
+        filtSize = round([0.01*min(params.imageSize) 0.01*min(params.imageSize) 0.01*min(params.imageSize)]);
         % Useful:
         %   figure;imshow(I);
         %   d = imdistline;
@@ -120,7 +121,7 @@ end
 
 %% Track
 progBar = ProgressBar(numFrames,'tracking pupil...');
-if isfield(params,'outVideo');
+if isfield(params,'outVideo')
     ih = figure;
 end
 
@@ -178,7 +179,9 @@ switch params.pupilFit
                         glint.size(i)   = gRadii(1);
                         if isfield(params,'outVideo')
                             viscircles(pCenters(1,:),pRadii(1),'Color','r');
-                            viscircles(gCenters(1,:),gRadii(1),'Color','b');
+                            hold on
+                            plot(gCenters(1,1),gCenters(1,2),'+');
+%                             viscircles(gCenters(1,:),gRadii(1),'Color','b');
                         end
                         pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                         pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
