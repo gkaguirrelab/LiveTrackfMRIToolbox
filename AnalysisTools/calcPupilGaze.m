@@ -257,11 +257,11 @@ switch params.trackType
         eyeParams.calMat        = calParams.calMat;
     case 'Hybrid'
         eyeMat                  = load(params.eyeTrackFile);
-        eyePupil.size           = eyeMat.RescaledPupil.size;
-        eyeParams.pupil.X       = eyeMat.RescaledPupil.X;
-        eyeParams.pupil.Y       = eyeMat.RescaledPupil.Y;
-        eyeParams.glint.X       = eyeMat.RescaledGlint.X;
-        eyeParams.glint.Y       = eyeMat.RescaledGlint.Y; 
+        eyePupil.size           = eyeMat.pupil.size;
+        eyeParams.pupil.X       = eyeMat.pupil.X;
+        eyeParams.pupil.Y       = eyeMat.pupil.Y;
+        eyeParams.glint.X       = eyeMat.glint.X;
+        eyeParams.glint.Y       = eyeMat.glint.Y; 
         eyeParams.viewDist      = params.viewDist;
         eyeParams.rpc           = calParams.rpc;
         eyeParams.calMat        = calParams.calMat;

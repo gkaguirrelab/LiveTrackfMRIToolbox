@@ -1,5 +1,14 @@
 function [response] = makeResponseStruct(params, dropboxDir)
-% header
+% this function calibrates and assembles the pupil respose Struct in the standard format.
+% 
+% Response fields:
+%         response.pupilSize 
+%         response.gazeEcc 
+%         response.gazePol 
+%         response.gazeX 
+%         response.gazeY  
+%         response.timebase 
+%         response.metadata
 
 %% get run params
 [runParams] = getRunParams (params,dropboxDir);
@@ -14,7 +23,7 @@ switch params.trackType
         calParams.trackType = params.trackType;
         calParams.eyeTrackFile =  fullfile(dropboxDir,runParams.outputDir,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,...
-            [runParams.runName '_rescaledPupil.mat']);
+            [runParams.runName '_pupilTrack.mat']);
         calParams.scaleCalFile = fullfile(dropboxDir,runParams.projectFolder,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.scaleCalName);
         % for early session 1 that do not have a Gaze Cal.
@@ -82,7 +91,7 @@ switch params.trackType
         response.metaData = runParams;
         response.metaData.eyeTrackFile = fullfile(runParams.outputDir,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,...
-            [runParams.runName '_rescaledPupil.mat']);
+            [runParams.runName '_pupilTrack.mat']);
         response.metaData.scaleCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
             runParams.subjectName,runParams.sessionDate,runParams.eyeTrackingDir,runParams.scaleCalName);
         response.metaData.gazeCalFile = fullfile(runParams.projectFolder,runParams.projectSubfolder,...
