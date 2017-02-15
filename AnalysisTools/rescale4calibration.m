@@ -54,15 +54,35 @@ load(pupilTrackFile);
 % calibration tracked both with liveTrack and pupilTrack algorithm (late
 % subjects) to determine the adjusting factor.
 
-sizeCoeff = 0.0117 ;
-xCoeff = 0.001;
-yCoeff = 0.001;
+% sizeCoeff = 0.0117 ;
+% xCoeff = 0.001;
+% yCoeff = 0.001;
+% 
+% RescaledPupil.size = (pupil.size ./ params.ptRes(1) - sizeCoeff) *params.ltRes(1);
+% RescaledPupil.X = (pupil.X ./ params.ptRes(1) - xCoeff) *params.ltRes(1);
+% RescaledPupil.Y = (pupil.Y ./ params.ptRes(2) - yCoeff) *params.ltRes(2);
+% RescaledGlint.X = (glint.X ./ params.ptRes(1) - xCoeff) *params.ltRes(1);
+% RescaledGlint.Y = (glint.Y ./ params.ptRes(2) - yCoeff) *params.ltRes(2);
 
-RescaledPupil.size = pupil.size * 0.9; 
-RescaledPupil.X = pupil.X ;
-RescaledPupil.Y = pupil.Y ;
-RescaledGlint.X = glint.X;
-RescaledGlint.Y = glint.Y ;
+
+sizeCoeff = 0.76 ;
+xCoeff = 0.8992;
+yCoeff = 0.8136;
+
+RescaledPupil.size = pupil.size * sizeCoeff;
+RescaledPupil.X = pupil.X * xCoeff;
+RescaledPupil.Y = pupil.Y * yCoeff;
+RescaledGlint.X = glint.X * xCoeff;
+RescaledGlint.Y = glint.Y * yCoeff;
+
+%% add a mild smoothing step
+% span = 3;
+% RescaledPupil.size = smooth(RescaledPupil.size,span);
+% RescaledPupil.X = smooth(RescaledPupil.X,span);
+% RescaledPupil.Y = smooth(RescaledPupil.Y,span);
+% RescaledGlint.X = smooth(RescaledGlint.X,span);
+% RescaledGlint.Y = smooth(RescaledGlint.Y,span);
+>>>>>>> master
 
 %% save out rescaled pupil track
 
