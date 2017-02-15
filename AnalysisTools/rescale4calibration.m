@@ -1,4 +1,6 @@
 function [RescaledPupil,RescaledGlint] = rescale4calibration(params,dropboxDir)
+% DECOMMISSIONED FUNCTION
+
 % rescale values for calibration
 
 
