@@ -178,10 +178,11 @@ switch params.pupilFit
                         glint.Y(i)      = gCenters(1,2);
                         glint.size(i)   = gRadii(1);
                         if isfield(params,'outVideo')
+%                             hold on
+%                             plot(gCenters(1,1),gCenters(1,2),'+b');
                             viscircles(pCenters(1,:),pRadii(1),'Color','r');
-                            hold on
-                            plot(gCenters(1,1),gCenters(1,2),'+');
-%                             viscircles(gCenters(1,:),gRadii(1),'Color','b');
+
+                            viscircles(gCenters(1,:),gRadii(1),'Color','b');
                         end
                         pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                         pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
