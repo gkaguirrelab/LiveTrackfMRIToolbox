@@ -127,7 +127,7 @@ end
 
 switch params.pupilFit
     case 'circle'
-        for i = 1:numFrames
+        for i = 100:numFrames
             % Get the frame
             I                   = squeeze(grayI(:,:,i));
             % Show the frame
@@ -137,7 +137,7 @@ switch params.pupilFit
             % Filter for pupil
             padP                = padarray(I,[size(I,1)/2 size(I,2)/2], 128);
             h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
-            pI                  = imfilter(padP,h);
+            pI                  = imsharpen(padP);%padP;%imfilter(padP,h);
             pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
             % Binarize pupil
             binP                = ones(size(pI));
@@ -147,7 +147,7 @@ switch params.pupilFit
             gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
             padG                = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
             h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
-            gI                  = imfilter(padG,h);
+            gI                  = imsharpen(padG);%padG;%imfilter(padG,h);
             gI = gI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
             % Binarize glint
             binG                = zeros(size(gI));
@@ -230,9 +230,11 @@ switch params.pupilFit
         beta = 0.2;
         % get approx center of the pupil
         I                   = squeeze(grayI(:,:,100));
-        fig_handle = figure, imshow(uint8(I));
-        title(sprintf('Please click near the pupil center'));
-        [cx, cy] = ginput(1);
+%         fig_handle = figure, imshow(uint8(I));
+%         title(sprintf('Please click near the pupil center'));
+%         [cx, cy] = ginput(1);
+cx = 320/2;
+cy = 240/2;
         close(fig_handle);
         
         for i = 1:numFrames
