@@ -42,7 +42,10 @@ if ~isfield(params,'rangeAdjust')
     params.rangeAdjust  = 0.05;
 end
 if ~isfield(params,'threshVals')
-    params.threshVals   = [0.06 0.999];
+    params.threshVals   = [0.07 0.999];
+end
+if ~isfield(params,'sharpen')
+    params.threshVals   = [20 10];  % sharpen params for PUPIL and GLINT
 end
 if ~isfield(params,'imageSize')
     params.imageSize    = [486 720]/2;
@@ -126,7 +129,7 @@ switch params.pupilFit
         se                      = strel('disk',params.dilateGlint);
         
         
-         case 'ellipse2'
+    case 'ellipse2'
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
         pupil.size = nan(numFrames,1);
@@ -137,7 +140,8 @@ switch params.pupilFit
         ellipse.glint = nan(numFrames,6);
         
         % structuring element to dialate the glint
-        se                      = strel('disk',params.dilateGlint);
+        se = strel('disk',params.dilateGlint);
+        sep = strel('disk',1);
         
     case 'starburst'
         cr = nan(numFrames,3);
@@ -161,24 +165,24 @@ switch params.pupilFit
             end
             % Filter for pupil
             padP                = padarray(I,[size(I,1)/2 size(I,2)/2], 128);
-%             h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
+            %             h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
             pI                  = imsharpen(padP);%padP;%imfilter(padP,h);
             pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
             % Binarize pupil
             binP                = ones(size(pI));
             binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
             % remove small objects
-            binP = bwareaopen(binP, 1200);
+            binP = bwareaopen(binP, 1300);
             % get perimeters
             binP = bwperim(binP);
             imshow(binP)
-  
+            
             
             % Filter for glint
             gI                  = ones(size(I));
             gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
             padG                = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
-%             h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
+            %             h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
             gI                  = imsharpen(padG);%padG;%imfilter(padG,h);
             gI = gI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
             % Binarize glint
@@ -214,7 +218,7 @@ switch params.pupilFit
                             hold on
                             plot(gCenters(1,1),gCenters(1,2),'+b');
                             hold off
-%                             viscircles(gCenters(1,:),gRadii(1),'Color','b');
+                            %                             viscircles(gCenters(1,:),gRadii(1),'Color','b');
                         end
                         pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
                         pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
@@ -264,13 +268,13 @@ switch params.pupilFit
             % Binarize pupil
             binP = zeros(size(pI));
             binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 1;
-%             % smooth
-%             binP = imgaussfilt(binP,2);
-%             % convert back to grey image
-%             binP = getGrayImage(binP);
-
-
-
+            %             % smooth
+            %             binP = imgaussfilt(binP,2);
+            %             % convert back to grey image
+            %             binP = getGrayImage(binP);
+            
+            
+            
             % Filter for glint
             gI  = ones(size(I));
             gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
@@ -337,51 +341,77 @@ switch params.pupilFit
         if isfield(params,'outMat')
             save(params.outMat,'pupil','glint', 'ellipse');
         end
-      
+        
         
         
     case 'ellipse2'
-         for i = 1:numFrames
+        for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
+            
             % Show the frame
             if isfield(params,'outVideo')
                 imshow(I);
             end
+            
             % Filter for pupil
-            pI = imsharpen(I,'amount',2.5);
-
-            imshow (pI)
-
+            % sharpen the image
+            pI = imsharpen(I,'amount',params.sharpen(1));
             % Binarize pupil
             binP = zeros(size(pI));
             binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 1;
+            %             imshow(binP)
+            %             pause
             % remove small objects
-            binP = bwareaopen(binP, 1000);
-           % get perimeters of image
+            binP = bwareaopen(binP, 1400);
+            %             imshow(binP)
+            %             pause
+            % fill Holes
+            binP = imfill(binP,'holes');
+            %             imshow(binP)
+            %             pause
+            % get perimeters of image
             binP = bwperim(binP);
+            %                         imshow(binP)
+            %             pause
+            
+            
             % Filter for glint
-            gI  = ones(size(I));
+            
+            gI = ones(size(I));
             gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
-            padG = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
-            gI = imsharpen(padG);
-            gI = gI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
+            % Binarize glint
+            binG                = zeros(size(gI));
+            binG(gI>0.01)       = 1;
+            dbinG               = imdilate(binG,se);
             % Binarize glint
             binG = zeros(size(gI));
             binG(gI>0.01)= 1;
             dbinG = imdilate(binG,se);
+            % remove small objects
+            dbinG = bwareaopen(dbinG, 100);
+            % get perimeters of image
+            dbinG = bwperim(dbinG);
             
             % Find the pupil
             [Xp, Yp] = ind2sub(size(binP),find(binP));
-            E = fit_ellipse(Xp,Yp);
+            Ep = fit_ellipse(Xp,Yp);
             
-            if E.long_axis > 0
-                [X, Y] = calcEllipse(E, 360);
+            if Ep.long_axis > 0
+                [Xp, Yp] = calcEllipse(Ep, 360);
+            else
+                continue
             end
             
             % Find the glint
             if ~params.pupilOnly
-                bestFitsGlint = ellipseDetection(dbinG);
+                [Xg, Yg] = ind2sub(size(dbinG),find(dbinG));
+                Eg = fit_ellipse(Xg,Yg);
+                if Eg.long_axis > 0 && params.pupilOnly == 0
+                    [Xg, Yg] = calcEllipse(Eg, 360);
+                else
+                    continue
+                end
             end
             switch params.pupilOnly
                 case 0
@@ -393,30 +423,29 @@ switch params.pupilFit
                     %                     end
                     % Visualize the pupil and glint on the image
                     
-                    pupil.X(i) = E.Y0;
-                    pupil.Y(i) = E.X0;
-                    pupil.size(i) = E.long_axis;
-                    glint.X(i) = bestFitsGlint(1,1);
-                    glint.Y(i) = bestFitsGlint(1,2);
-                    glint.size(i) = bestFitsGlint(1,3);
-                    ellipse.pupil(i) = bestFitsPupil;
-                    ellipse.glint(i) = bestFitsGlint;
+                    pupil.X(i) = Ep.Y0_in;
+                    pupil.Y(i) = Ep.X0_in;
+                    pupil.size(i) = Ep.long_axis;
+                    glint.X(i) = Eg.Y0_in;
+                    glint.Y(i) = Eg.X0_in;
+                    ellipse.pupil(i) = Ep;
+                    ellipse.glint(i) = Eg;
                     
                     if isfield(params,'outVideo')
                         hold on
-                        plot(bestFitsGlint(1,1),bestFitsGlint(1,2),'+b');
+                        plot(glint.X(i),glint.Y(i),'+b');
                         hold on
-                        plotEllipse(bestFitsPupil(1,3),bestFitsPupil(1,4),bestFitsPupil(1,5),bestFitsPupil(1,1),bestFitsPupil(1,2));
+                        plot(Yp, Xp);
                         hold off
                     end
                     
                 case 1
-                    pupil.X(i) = E.Y0_in;
-                    pupil.Y(i) = E.X0_in;
-                    pupil.size(i) = E.a *2;
+                    pupil.X(i) = Ep.Y0_in;
+                    pupil.Y(i) = Ep.X0_in;
+                    pupil.size(i) = Ep.long_axis;
                     if isfield(params,'outVideo')
                         hold on
-                        plot(Y, X);
+                        plot(Yp, Xp);
                         hold off
                     end
             end
@@ -506,7 +535,7 @@ switch params.pupilFit
         end
 end
 
-end 
+end
 
 
 function A = getGrayImage(A)
