@@ -364,6 +364,10 @@ switch params.pupilFit
             %             pause
             % remove small objects
             binP = bwareaopen(binP, 1400);
+            % if need to track the glint, get a mask based on pupil size
+            if ~params.pupilOnly
+                maskP = imdilate(binP,se);
+            end
             %             imshow(binP)
             %             pause
             % fill Holes
@@ -375,25 +379,7 @@ switch params.pupilFit
             %                         imshow(binP)
             %             pause
             
-            
-            % Filter for glint
-            
-            gI = ones(size(I));
-            gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
-            % Binarize glint
-            binG                = zeros(size(gI));
-            binG(gI>0.01)       = 1;
-            dbinG               = imdilate(binG,se);
-            % Binarize glint
-            binG = zeros(size(gI));
-            binG(gI>0.01)= 1;
-            dbinG = imdilate(binG,se);
-            % remove small objects
-            dbinG = bwareaopen(dbinG, 100);
-            % get perimeters of image
-            dbinG = bwperim(dbinG);
-            
-            % Find the pupil
+            % Fit ellipse to pupil
             [Xp, Yp] = ind2sub(size(binP),find(binP));
             Ep = fit_ellipse(Xp,Yp);
             
@@ -403,8 +389,26 @@ switch params.pupilFit
                 continue
             end
             
-            % Find the glint
+            % Work on the glint
             if ~params.pupilOnly
+        
+                  % Filter for glint
+                  gI = ones(size(I));
+                  gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
+                  % Binarize glint
+                  binG                = zeros(size(gI));
+                  binG(gI>0.01)       = 1;
+                  dbinG               = imdilate(binG,se);
+                  % Binarize glint
+                  binG = zeros(size(gI));
+                  binG(gI>0.01)= 1;
+                  dbinG = imdilate(binG,se);
+                  % get ROI for glint, based on pupil size
+                  roiG = immultiply(maskP,dbinG);
+                  % remove small objects
+                  dbinG = bwareaopen(roiG, 100);
+                  % get perimeters of image
+                  dbinG = bwperim(roiG);
                 [Xg, Yg] = ind2sub(size(dbinG),find(dbinG));
                 Eg = fit_ellipse(Xg,Yg);
                 if Eg.long_axis > 0 && params.pupilOnly == 0
@@ -461,77 +465,6 @@ switch params.pupilFit
         end
         if isfield(params,'outMat')
             save(params.outMat,'pupil','glint', 'ellipse');
-        end
-        
-        
-    case 'starburst'
-        % reduce noise params
-        Ie5 = squeeze(grayI(:,:,5));
-        Ie4 = squeeze(grayI(:,:,4));
-        Ie3 = squeeze(grayI(:,:,3));
-        Ie2 = squeeze(grayI(:,:,2));
-        Ie1 = squeeze(grayI(:,:,1));
-        normalize_factor = (sum(Ie5,2) + sum(Ie4,2) + sum(Ie3,2) + sum(Ie2,2) + sum(Ie1,2))/(5*size(Ie1,2));
-        beta = 0.2;
-        % get approx center of the pupil
-        I                   = squeeze(grayI(:,:,100));
-        %         fig_handle = figure, imshow(uint8(I));
-        %         title(sprintf('Please click near the pupil center'));
-        %         [cx, cy] = ginput(1);
-        cx = 320/2;
-        cy = 240/2;
-        close(fig_handle);
-        
-        for i = 1:numFrames
-            % Get the frame
-            I                   = squeeze(grayI(:,:,i));
-            % Show the frame
-            if isfield(params,'outVideo')
-                imshow(I);
-                hold on
-            end
-            % reduce noise
-            [I, normalize_factor] = reduce_noise_temporal_shift(I, normalize_factor, beta);
-            pupil_edge_thresh = 20;
-            [ellipse(i,:), cr(i,:)] = detect_pupil_and_corneal_reflection(I, cx, cy, pupil_edge_thresh);
-            if ~(ellipse(i,1) <= 0 || ellipse(i, 2) <= 0)
-                consecutive_lost_count = 0;
-                cx = ellipse(i, 3);
-                cy = ellipse(i, 4);
-            else
-                consecutive_lost_count = consecutive_lost_count + 1;
-                if consecutive_lost_count >= max_lost_count
-                    cx = width/2;
-                    cy = height/2;
-                end
-            end
-            % plot cross on glint
-            hold on
-            plot(cr(i,1,1),cr(i,2,1), '+');
-            hold on
-            % plot ellipse around pupil
-            a = ellipse(i,1,1);
-            b = ellipse(i,2,1);
-            x0 = ellipse(i,3,1);
-            y0 = ellipse(i,4,1);
-            t = -pi:0.01:pi;
-            x = x0+a*cos(t);
-            y = y0+b*sin(t);
-            plot(x,y, '.r');
-            hold off
-            if isfield(params,'outVideo')
-                frame  = getframe(ih);
-                writeVideo(outObj,frame);
-            end
-            
-            if ~mod(i,10);progBar(i);end;
-        end
-        if isfield(params,'outVideo')
-            close(ih);
-            close(outObj);
-        end
-        if isfield(params,'outMat')
-            save(params.outMat,'ellipse','cr');
         end
 end
 
