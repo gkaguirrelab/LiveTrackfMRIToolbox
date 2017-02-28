@@ -1,8 +1,13 @@
-function [pupil,glint, params] = trackPupil(params)
+function [pupil, glint, params] = trackPupil(params)
 
 % Tracks the pupil using an input video file, write out an .avi video
 % By default, the video is resized and cropped to have the same aspect
 % ratio and size of the original LiveTrack video input.
+% 
+% The default fitting is done with an ellipse, after applying a circular
+% mask to the original video. A simple circular fit can be used for
+% tracking, but the resulting data appears noisier and generally less
+% accurate.
 %
 %   Usage:
 %       [pupil,glint,params]       = trackPupil(params)
@@ -18,34 +23,61 @@ function [pupil,glint, params] = trackPupil(params)
 %       pupil.X             = X coordinate of pupil center (pixels)
 %       pupil.Y             = Y coordinate of pupil center (pixels)
 %       pupil.size          = radius of pupil (pixels)
+%       pupil.circleStrength= strength (accuracy) of the circular mask
+%       pupil.ellipse       = parameters of the tracked ellipse
 %       glint.X             = X coordinate of glint center (pixels)
 %       glint.Y             = Y coordinate of glint center (pixels)
 %       glint.size          = radius of glint (pixels)
+%       glint.circleStrength= strength (accuracy) of the circular mask
+%       glint.ellipse       = parameters of the tracked ellipse
+%       params              = struct with all params used for tracking
 %
 %   Defaults:
-%       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame
+%       params.pupilFit     = 'ellipse';    % tracking strategy
+%       params.pupilOnly    = 0;            % if 1, no glint is required
+%       params.imageSize    = [486 720]/2;; % used to resize input video (for no resizing, just input the native image size [ Y X ] )
+%       params.imageCrop    = [1 1 319 239] % used to crop the image
+%       
+%       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame for circular mask
 %       params.threshVals   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
-%       params.imageSize    = [486 720]/2;; % used to resize input video
 %       params.pupilRange   = [10 70];      % initial pupil size range
 %       params.glintRange   = [10 30];      % constant glint size range
 %       params.glintOut     = 0.1;          % proportion outside of pupil glint is allowed to be. Higher = more outside
 %       params.sensitivity  = 0.99;         % [0 1] - sensitivity for 'imfindcircles'. Higher = more circles found
 %       params.dilateGlint  = 6;            % used to dialate glint. Higher = more dilation.
-%       params.pupilOnly    = 0;            % if 1, no glint is required
-%
-%   Written by Andrew S Bock Sep 2016
-%   Edited by Giulia Frazzetta Feb 2017 : changed default video size, added
-%   ellipse option, output eyetracking params.
+% 
+%       params.ellipseThresh= [0.95 0.9];   % used to threshold the masked image for ellipse tracking
+%       params.maskBox      = [4 8];        % used to expand the circular mask for ellipse tracking
+% 
+%   V 2.0 -- Written by Giulia Frazzetta Feb 2017 : general code reorganization,
+%   changed default video size, added ellipse option, output eyetracking
+%   params. 
+%   V 1.0 -- Written by Andrew S Bock Sep 2016
 
 %% set defaults
+
+% params to choose the tracking
+if ~isfield(params,'pupilFit')
+    params.pupilFit = 'ellipse';
+end
+if ~isfield(params,'pupilOnly')
+    params.pupilOnly = 0;
+end
+
+% params for image resizing and cropping
+if ~isfield(params,'imageSize')
+    params.imageSize = [486 720]/2;
+end
+if ~isfield(params,'imageCrop')
+    params.imageCrop = [1 1 319 239];
+end
+
+% params for circleFit (always needed)
 if ~isfield(params,'rangeAdjust')
-    params.rangeAdjust  = 0.05;
+    params.rangeAdjust = 0.05;
 end
 if ~isfield(params,'threshVals')
-    params.threshVals   = [0.05 0.999];
-end
-if ~isfield(params,'imageSize')
-    params.imageSize    = [486 720]/2;
+    params.threshVals = [0.06 0.999];
 end
 if ~isfield(params,'pupilRange')
     params.pupilRange   = [10 70];
@@ -60,27 +92,30 @@ if ~isfield(params,'sensitivity')
     params.sensitivity  = 0.99;
 end
 if ~isfield(params,'dilateGlint')
-    params.dilateGlint  = 10;
-end
-if ~isfield(params,'pupilOnly')
-    params.pupilOnly    = 0;
-end
-if ~isfield(params,'pupilFit')
-    params.pupilFit    = 'circle';
+    params.dilateGlint  = 5;
 end
 
+
+% params for ellipse case
+if ~isfield(params,'ellipseThresh')
+    params.ellipseThresh   = [0.95 0.9];  
+end
+if ~isfield(params,'maskBox')
+    params.maskBox   = [4 8];  
+end
 
 %% Load video
 disp('Loading video file, may take a couple minutes...');
 inObj                   = VideoReader(params.inVideo);
 numFrames               = floor(inObj.Duration*inObj.FrameRate);
 grayI                   = zeros([240 320 numFrames],'uint8');
-% Convert to gray, resize, crop
+
+% Convert to gray, resize, crop to livetrack size
 for i = 1:numFrames
     thisFrame           = readFrame(inObj);
     tmp                 = rgb2gray(thisFrame);
     tmp2        = imresize(tmp,params.imageSize);
-    tmp3 = imcrop(tmp2,[1 1 319 239]);
+    tmp3 = imcrop(tmp2,params.imageCrop);
     grayI(:,:,i) = tmp3;
 end
 
@@ -96,27 +131,42 @@ clear RGB inObj
 
 switch params.pupilFit
     case 'circle'
-        % Create filter parameters
-        filtSize = round([0.01*min(params.imageSize) 0.01*min(params.imageSize) 0.01*min(params.imageSize)]);
         % Useful:
         %   figure;imshow(I);
         %   d = imdistline;
         %   % check size of pupil or glint
         %   delete(d);
         
-        pupilRange              = params.pupilRange;
-        glintRange              = params.glintRange;
-        pupil.X                 = nan(numFrames,1);
-        pupil.Y                 = nan(numFrames,1);
-        pupil.size              = nan(numFrames,1);
-        glint.X                 = nan(numFrames,1);
-        glint.Y                 = nan(numFrames,1);
-        glint.size              = nan(numFrames,1);
-        % structuring element to dialate the glint
-        se                      = strel('disk',params.dilateGlint);
+        pupilRange = params.pupilRange;
+        glintRange = params.glintRange;
+        pupil.X = nan(numFrames,1);
+        pupil.Y = nan(numFrames,1);
+        pupil.size = nan(numFrames,1);
+        pupil.circleStrength = nan(numFrames,1);
+        glint.X = nan(numFrames,1);
+        glint.Y = nan(numFrames,1);
+        glint.size = nan(numFrames,1);
+        glint.circleStrength = nan(numFrames,1);
+        
+        
     case 'ellipse'
-        cr = nan(numFrames,3);
-        ellipse = nan(numFrames,5);
+        pupilRange = params.pupilRange;
+        glintRange = params.glintRange;
+        pupil.X = nan(numFrames,1);
+        pupil.Y = nan(numFrames,1);
+        pupil.size = nan(numFrames,1);
+        pupil.circleStrength = nan(numFrames,1);
+        pupil.ellipse = nan(numFrames,1);
+        glint.X = nan(numFrames,1);
+        glint.Y = nan(numFrames,1);
+        glint.size = nan(numFrames,1);
+        glint.circleStrength = nan(numFrames,1);
+        glint.ellipse = nan(numFrames,1);
+        
+        
+        % structuring element for mask size
+        sep = strel('rectangle',params.maskBox);
+        
 end
 
 %% Track
@@ -126,167 +176,254 @@ if isfield(params,'outVideo')
 end
 
 switch params.pupilFit
+    
     case 'circle'
-        for i = 100:numFrames
-            % Get the frame
-            I                   = squeeze(grayI(:,:,i));
-            % Show the frame
-            if isfield(params,'outVideo')
-                imshow(I);
-            end
-            % Filter for pupil
-            padP                = padarray(I,[size(I,1)/2 size(I,2)/2], 128);
-            h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
-            pI                  = imsharpen(padP);%padP;%imfilter(padP,h);
-            pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
-            % Binarize pupil
-            binP                = ones(size(pI));
-            binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
-            % Filter for glint
-            gI                  = ones(size(I));
-            gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
-            padG                = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
-            h                   = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
-            gI                  = imsharpen(padG);%padG;%imfilter(padG,h);
-            gI = gI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
-            % Binarize glint
-            binG                = zeros(size(gI));
-            binG(gI>0.01)       = 1;
-            dbinG               = imdilate(binG,se);
-            % Find the pupil
-            [pCenters, pRadii]  = imfindcircles(binP,pupilRange,'ObjectPolarity','dark',...
-                'Sensitivity',params.sensitivity);
-            % Find the glint
-            if ~params.pupilOnly
-                [gCenters, gRadii]      = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
-                    'Sensitivity',params.sensitivity);
-            end
-            switch params.pupilOnly
-                case 0
-                    % Remove glints outside the pupil
-                    if ~isempty(pCenters) && ~isempty(gCenters)
-                        dists           = sqrt( (gCenters(:,1) - pCenters(1,1)).^2 + (gCenters(:,2) - pCenters(1,2)).^2 );
-                        gCenters(dists>(1 + params.glintOut)*(pRadii(1)),:) = [];
-                        gRadii(dists>(1 + params.glintOut)*(pRadii(1))) = [];
-                    end
-                    % Visualize the pupil and glint on the image
-                    if ~isempty(pCenters) && ~isempty(gCenters)
-                        pupil.X(i)      = pCenters(1,1);
-                        pupil.Y(i)      = pCenters(1,2);
-                        pupil.size(i)   = pRadii(1);
-                        glint.X(i)      = gCenters(1,1);
-                        glint.Y(i)      = gCenters(1,2);
-                        glint.size(i)   = gRadii(1);
-                        if isfield(params,'outVideo')
-%                             hold on
-%                             plot(gCenters(1,1),gCenters(1,2),'+b');
-                            viscircles(pCenters(1,:),pRadii(1),'Color','r');
-
-                            viscircles(gCenters(1,:),gRadii(1),'Color','b');
-                        end
-                        pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
-                        pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
-                    else
-                        pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-                        pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
-                    end
-                case 1
-                    if ~isempty(pCenters)
-                        pupil.X(i)      = pCenters(1,1);
-                        pupil.Y(i)      = pCenters(1,2);
-                        pupil.size(i)   = pRadii(1);
-                        if isfield(params,'outVideo')
-                            viscircles(pCenters(1,:),pRadii(1),'Color','r');
-                        end
-                        pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
-                        pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
-                    else
-                        pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-                        pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
-                    end
-            end
-            if isfield(params,'outVideo')
-                frame                   = getframe(ih);
-                writeVideo(outObj,frame);
-            end
-            if ~mod(i,10);progBar(i);end;
-        end
-        if isfield(params,'outVideo')
-            close(ih);
-            close(outObj);
-        end
-        if isfield(params,'outMat')
-            save(params.outMat,'pupil','glint');
-        end
-        
-    case 'ellipse'
-        % reduce noise params
-        Ie5 = squeeze(grayI(:,:,5));
-        Ie4 = squeeze(grayI(:,:,4));
-        Ie3 = squeeze(grayI(:,:,3));
-        Ie2 = squeeze(grayI(:,:,2));
-        Ie1 = squeeze(grayI(:,:,1));
-        normalize_factor = (sum(Ie5,2) + sum(Ie4,2) + sum(Ie3,2) + sum(Ie2,2) + sum(Ie1,2))/(5*size(Ie1,2));
-        beta = 0.2;
-        % get approx center of the pupil
-        I                   = squeeze(grayI(:,:,100));
-%         fig_handle = figure, imshow(uint8(I));
-%         title(sprintf('Please click near the pupil center'));
-%         [cx, cy] = ginput(1);
-cx = 320/2;
-cy = 240/2;
-        close(fig_handle);
-        
         for i = 1:numFrames
             % Get the frame
             I                   = squeeze(grayI(:,:,i));
             % Show the frame
             if isfield(params,'outVideo')
                 imshow(I);
-                hold on
-            end
-            % reduce noise
-            [I, normalize_factor] = reduce_noise_temporal_shift(I, normalize_factor, beta);
-            pupil_edge_thresh = 20;
-            [ellipse(i,:), cr(i,:)] = detect_pupil_and_corneal_reflection(I, cx, cy, pupil_edge_thresh);
-            if ~(ellipse(i,1) <= 0 || ellipse(i, 2) <= 0)
-                consecutive_lost_count = 0;
-                cx = ellipse(i, 3);
-                cy = ellipse(i, 4);
-            else
-                consecutive_lost_count = consecutive_lost_count + 1;
-                if consecutive_lost_count >= max_lost_count
-                    cx = width/2;
-                    cy = height/2;
-                end
-            end
-            % plot cross on glint
-            plot(cr(i,1,1),cr(i,2,1), '+');
-            hold on
-            % plot ellipse around pupil
-            a = ellipse(i,1,1);
-            b = ellipse(i,2,1);
-            x0 = ellipse(i,3,1);
-            y0 = ellipse(i,4,1);
-            t = -pi:0.01:pi;
-            x = x0+a*cos(t);
-            y = y0+b*sin(t);
-            plot(x,y, '.r');
-            if isfield(params,'outVideo')
-                frame  = getframe(ih);
-                writeVideo(outObj,frame);
             end
             
+            % track with circles
+            [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
+            
+            % visualize tracking results
+            switch params.pupilOnly
+                case 0
+                    if ~isempty(pCenters) && ~isempty(gCenters)
+                        pupil.X(i) = pCenters(1,1);
+                        pupil.Y(i) = pCenters(1,2);
+                        pupil.size(i) = pRadii(1);
+                        pupil.circleStrength(i) = pMetric(1);
+                        glint.X(i)= gCenters(1,1);
+                        glint.Y(i) = gCenters(1,2);
+                        glint.size(i) = gRadii(1);
+                        glint.circleStrength(i) = gMetric(1);
+                        if isfield(params,'outVideo')
+                            viscircles(pCenters(1,:),pRadii(1),'Color','r');
+                            hold on
+                            plot(gCenters(1,1),gCenters(1,2),'+b');
+                            hold off
+                        end
+                    end
+                case 1
+                    if ~isempty(pCenters)
+                        pupil.X(i)      = pCenters(1,1);
+                        pupil.Y(i)      = pCenters(1,2);
+                        pupil.size(i)   = pRadii(1);
+                        pupil.strength  = pMetric(1);
+                        if isfield(params,'outVideo')
+                            viscircles(pCenters(1,:),pRadii(1),'Color','r');
+                        end
+                    end
+            end
+            
+            % save single frame
+            if isfield(params,'outVideo')
+                frame                   = getframe(ih);
+                writeVideo(outObj,frame);
+            end
             if ~mod(i,10);progBar(i);end;
         end
-        if isfield(params,'outVideo')
-            close(ih);
-            close(outObj);
+        
+    case 'ellipse'
+        for i = 1:400 %numFrames
+            % Get the frame
+            I = squeeze(grayI(:,:,i));
+            
+            % Show the frame
+            if isfield(params,'outVideo')
+                imshow(I);
+            end
+            
+            % track with circles
+            [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
+            
+            if isempty(pCenters)
+                continue
+            else
+                % create a mask from circle fitting parameters
+                pupilMask = zeros(size(I));
+                pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
+                pupilMask = imdilate(pupilMask,sep);
+                pupilMask = im2bw(pupilMask);
+                
+                % apply mask to grey image complement image
+                cI = imcomplement(I);
+                maskedPupil = immultiply(cI,pupilMask); 
+                
+                % convert back to gray
+                pI = uint8(maskedPupil);
+                % Binarize pupil
+                binP = ones(size(pI));
+                binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
+                
+                % remove small objects
+                binP = bwareaopen(binP, 500);
+                
+                % fill the holes
+                binP = imfill(binP,'holes');
+                
+                % get perimeter of object
+                binP = bwperim(binP);
+                
+                % Fit ellipse to pupil
+                [Xp, Yp] = ind2sub(size(binP),find(binP));
+                Ep = fit_ellipse(Xp,Yp);
+                
+                % store results
+                if ~isempty(Ep) 
+                    pupil.X(i) = Ep.Y0_in;
+                    pupil.Y(i) = Ep.X0_in;
+                    pupil.size(i) = Ep.long_axis;
+                    pupil.circleStrength(i) = pMetric(1);
+                else
+                    continue
+                end
+                
+                % track the glint
+                if ~params.pupilOnly && ~isempty(gCenters)
+
+                    % create a mask from circle fitting parameters (note: glint
+                    % is already dilated
+                    glintMask = zeros(size(I));
+                    glintMask = insertShape(glintMask,'FilledCircle',[gCenters(1,1) gCenters(1,2) gRadii(1)],'Color','white');
+                    glintMask = im2bw(glintMask);
+                    
+                    % apply mask to grey image
+                    maskedGlint = immultiply(I,glintMask);
+                    
+                    % convert back to gray
+                    gI = uint8(maskedGlint);
+                    
+                    % Binarize glint
+                    binG  = ones(size(gI));
+                    binG(gI<quantile(double(I(:)),params.ellipseThresh(2))) = 0;
+                    
+                    % get perimeter of glint
+                    binG = bwperim(binG);
+                    
+                    % Fit ellipse to glint
+                    [Xg, Yg] = ind2sub(size(binG),find(binG));
+                    Eg = fit_ellipse(Xg,Yg);
+                    
+                    % store results
+                    if ~isempty (Eg)
+                        glint.X(i) = Eg.Y0_in;
+                        glint.Y(i) = Eg.X0_in;
+                        glint.circleStrength(i) = gMetric(1);
+                        glint.ellipseParams(i) = Eg;
+                    else
+                        glint.X(i)= gCenters(1,1);
+                        glint.Y(i) = gCenters(1,2);
+                        glint.size(i) = gRadii(1);
+                        glint.circleStrength(i) = gMetric(1);
+                    end
+                end
+                
+                % plot results
+                if ~isempty(Ep) && Ep.X0_in > 0
+                    [Xp, Yp] = calcEllipse(Ep, 360);
+                    if isfield(params,'outVideo')
+                        hold on
+                        plot(Yp, Xp);
+                        if ~params.pupilOnly && ~isnan(glint.X(i))
+                            hold on
+                            plot(glint.X(i),glint.Y(i),'+b');
+                        end
+                        hold off
+                    end
+                else
+                    continue
+                end
+                
+                % save frame
+                if isfield(params,'outVideo')
+                    frame   = getframe(ih);
+                    writeVideo(outObj,frame);
+                end
+                if ~mod(i,10);progBar(i);end;
+            end
         end
-        if isfield(params,'outMat')
-            save(params.outMat,'ellipse','cr');
-        end
+end
+% save full video
+if isfield(params,'outVideo')
+    close(ih);
+    close(outObj);
+end
+
+% save tracked values to output matrix
+if isfield(params,'outMat')
+    save(params.outMat,'pupil','glint');
 end
 
 
+
+end
+
+
+
+function [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange)
+
+% create blurring filter
+filtSize = round([0.01*min(params.imageSize) 0.01*min(params.imageSize) 0.01*min(params.imageSize)]);
+
+% structuring element to dialate the glint
+se = strel('disk',params.dilateGlint);
+
+% Filter for pupil
+padP = padarray(I,[size(I,1)/2 size(I,2)/2], 128);
+h = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
+pI = imfilter(padP,h);
+pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
+% Binarize pupil
+binP = ones(size(pI));
+binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
+
+% Filter for glint
+gI = ones(size(I));
+gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
+padG = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
+h = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
+gI = imfilter(padG,h);
+gI = gI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
+% Binarize glint
+binG  = zeros(size(gI));
+binG(gI>0.01) = 1;
+dbinG = imdilate(binG,se);
+
+% Find the pupil
+[pCenters, pRadii,pMetric] = imfindcircles(binP,pupilRange,'ObjectPolarity','dark',...
+    'Sensitivity',params.sensitivity);
+% Find the glint
+if ~params.pupilOnly
+    [gCenters, gRadii,gMetric] = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
+        'Sensitivity',params.sensitivity);
+else
+    gCenters = [NaN NaN];
+    gRadii = NaN;
+    gMetric = NaN;
+end
+
+% Remove glints outside the pupil
+if ~params.pupilOnly
+    if ~isempty(pCenters) && ~isempty(gCenters)
+        dists           = sqrt( (gCenters(:,1) - pCenters(1,1)).^2 + (gCenters(:,2) - pCenters(1,2)).^2 );
+        gCenters(dists>(1 + params.glintOut)*(pRadii(1)),:) = [];
+        gRadii(dists>(1 + params.glintOut)*(pRadii(1))) = [];
+    end
+end
+
+% adjust the pupil range (for quicker processing)
+if ~isempty(pCenters)
+    pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
+    pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
+else
+    pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
+    pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
+end
+
+end
 

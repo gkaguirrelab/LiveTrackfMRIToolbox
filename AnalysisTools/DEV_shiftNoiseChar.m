@@ -40,21 +40,28 @@ dataDir = fullfile(dropboxDir,'TOME_data',params.projectSubfolder,params.subject
 
 scaleCalFile = dir(fullfile(dataDir, '*ScaleCal.mat'));
 
-
 %% find deinterlaced video in processing folder
 processingDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
 
 scaleVideos = dir(fullfile(processingDir, '*ScaleCal*60hz.avi'));
-
 %% track deinterlaced video using custom track
 for ii = 1 : length(scaleVideos)
     params.acqRate = 60;
     params.inVideo = fullfile(scaleVideos(ii).folder,scaleVideos(ii).name);
-    params.outVideo = fullfile(processingDir,[scaleVideos(ii).name '_pupilTrack.avi']);
-    params.outMat = fullfile(processingDir, [scaleVideos(ii).name '_pupilTrack.mat']);
+    params.outVideo = fullfile(processingDir,[scaleVideos(ii).name '_ellipseTrack.avi']);
+    params.outMat = fullfile(processingDir, [scaleVideos(ii).name '_ellipseTrack.mat']);
     params.pupilOnly = 1;
-    params.pupilRange   = [40 70];
+    params.pupilRange   = [30 70];
     params.rangeAdjust  = 0.05;
+    params.minMajorAxis = 200; 
+    params.maxMajorAxis = 210;
+    params.minAspectRatio = 0.8;
+     params.rotation = 180; 
+     params.rotationSpan = 0.1;
+     params.smoothStddev = 1;
+     params.randomize = 2;
+     params.pupilFit = 'ellipse2';
+     params.uniformWeights = false; 
     trackPupil(params);
     
 end
@@ -63,7 +70,7 @@ end
 
 lt = load (fullfile(dataDir,scaleCalFile.name));
 for ii = 1 : length(scaleVideos)
-    pt(ii)=load (fullfile(processingDir, [scaleVideos(ii).name '_pupilTrack.mat']));
+    pt(ii)=load (fullfile(processingDir, [scaleVideos(ii).name '_ellipseTrack.mat']));
 end
 
 %% extract liveTrack data
@@ -130,7 +137,7 @@ shift5.pupil.Y = pt5.median.Y - lt5.median.Y;
 shift6.pupil.Y = pt6.median.Y - lt6.median.Y;
 shift7.pupil.Y = pt7.median.Y - lt7.median.Y;
 
-%% plot pupil Y and Y before shift
+%% plot pupil Y and Y 
 
 % plot
 fullFigure;
