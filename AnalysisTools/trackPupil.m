@@ -1,8 +1,13 @@
-function [pupil,glint, params] = trackPupil(params)
+function [pupil, glint, params] = trackPupil(params)
 
 % Tracks the pupil using an input video file, write out an .avi video
 % By default, the video is resized and cropped to have the same aspect
 % ratio and size of the original LiveTrack video input.
+% 
+% The default fitting is done with an ellipse, after applying a circular
+% mask to the original video. A simple circular fit can be used for
+% tracking, but the resulting data appears noisier and generally less
+% accurate.
 %
 %   Usage:
 %       [pupil,glint,params]       = trackPupil(params)
@@ -18,41 +23,61 @@ function [pupil,glint, params] = trackPupil(params)
 %       pupil.X             = X coordinate of pupil center (pixels)
 %       pupil.Y             = Y coordinate of pupil center (pixels)
 %       pupil.size          = radius of pupil (pixels)
+%       pupil.circleStrength= strength (accuracy) of the circular mask
+%       pupil.ellipse       = parameters of the tracked ellipse
 %       glint.X             = X coordinate of glint center (pixels)
 %       glint.Y             = Y coordinate of glint center (pixels)
 %       glint.size          = radius of glint (pixels)
+%       glint.circleStrength= strength (accuracy) of the circular mask
+%       glint.ellipse       = parameters of the tracked ellipse
+%       params              = struct with all params used for tracking
 %
 %   Defaults:
-%       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame
+%       params.pupilFit     = 'ellipse';    % tracking strategy
+%       params.pupilOnly    = 0;            % if 1, no glint is required
+%       params.imageSize    = [486 720]/2;; % used to resize input video (for no resizing, just input the native image size [ Y X ] )
+%       params.imageCrop    = [1 1 319 239] % used to crop the image
+%       
+%       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame for circular mask
 %       params.threshVals   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
-%       params.imageSize    = [486 720]/2;; % used to resize input video
 %       params.pupilRange   = [10 70];      % initial pupil size range
 %       params.glintRange   = [10 30];      % constant glint size range
 %       params.glintOut     = 0.1;          % proportion outside of pupil glint is allowed to be. Higher = more outside
 %       params.sensitivity  = 0.99;         % [0 1] - sensitivity for 'imfindcircles'. Higher = more circles found
 %       params.dilateGlint  = 6;            % used to dialate glint. Higher = more dilation.
-%       params.pupilOnly    = 0;            % if 1, no glint is required
-%
-%   Written by Andrew S Bock Sep 2016
-%   Edited by Giulia Frazzetta Feb 2017 : changed default video size, added
-%   ellipse option, output eyetracking params.
+% 
+%       params.ellipseThresh= [0.95 0.9];   % used to threshold the masked image for ellipse tracking
+%       params.maskBox      = [4 8];        % used to expand the circular mask for ellipse tracking
+% 
+%   V 2.0 -- Written by Giulia Frazzetta Feb 2017 : general code reorganization,
+%   changed default video size, added ellipse option, output eyetracking
+%   params. 
+%   V 1.0 -- Written by Andrew S Bock Sep 2016
 
 %% set defaults
 
-% default tracking strategy
+% params to choose the tracking
 if ~isfield(params,'pupilFit')
-    params.pupilFit    = 'circle';
+    params.pupilFit = 'ellipse';
+end
+if ~isfield(params,'pupilOnly')
+    params.pupilOnly = 0;
+end
+
+% params for image resizing and cropping
+if ~isfield(params,'imageSize')
+    params.imageSize = [486 720]/2;
+end
+if ~isfield(params,'imageCrop')
+    params.imageCrop = [1 1 319 239];
 end
 
 % params for circleFit (always needed)
 if ~isfield(params,'rangeAdjust')
-    params.rangeAdjust  = 0.05;
+    params.rangeAdjust = 0.05;
 end
 if ~isfield(params,'threshVals')
-    params.threshVals   = [0.06 0.999];
-end
-if ~isfield(params,'imageSize')
-    params.imageSize    = [486 720]/2;
+    params.threshVals = [0.06 0.999];
 end
 if ~isfield(params,'pupilRange')
     params.pupilRange   = [10 70];
@@ -69,13 +94,14 @@ end
 if ~isfield(params,'dilateGlint')
     params.dilateGlint  = 5;
 end
-if ~isfield(params,'pupilOnly')
-    params.pupilOnly    = 0;
-end
+
 
 % params for ellipse case
-if ~isfield(params,'sharpen')
-    params.sharpen   = [5 5];  % sharpen params for PUPIL and GLINT
+if ~isfield(params,'ellipseThresh')
+    params.ellipseThresh   = [0.95 0.9];  
+end
+if ~isfield(params,'maskBox')
+    params.maskBox   = [4 8];  
 end
 
 %% Load video
@@ -89,7 +115,7 @@ for i = 1:numFrames
     thisFrame           = readFrame(inObj);
     tmp                 = rgb2gray(thisFrame);
     tmp2        = imresize(tmp,params.imageSize);
-    tmp3 = imcrop(tmp2,[1 1 319 239]);
+    tmp3 = imcrop(tmp2,params.imageCrop);
     grayI(:,:,i) = tmp3;
 end
 
@@ -116,9 +142,12 @@ switch params.pupilFit
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
         pupil.size = nan(numFrames,1);
+        pupil.circleStrength = nan(numFrames,1);
         glint.X = nan(numFrames,1);
         glint.Y = nan(numFrames,1);
         glint.size = nan(numFrames,1);
+        glint.circleStrength = nan(numFrames,1);
+        
         
     case 'ellipse'
         pupilRange = params.pupilRange;
@@ -126,15 +155,17 @@ switch params.pupilFit
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
         pupil.size = nan(numFrames,1);
+        pupil.circleStrength = nan(numFrames,1);
+        pupil.ellipse = nan(numFrames,1);
         glint.X = nan(numFrames,1);
         glint.Y = nan(numFrames,1);
         glint.size = nan(numFrames,1);
-        ellipse.pupil = nan(numFrames,6);
-        ellipse.glint = nan(numFrames,6);
+        glint.circleStrength = nan(numFrames,1);
+        glint.ellipse = nan(numFrames,1);
         
-        % structuring element to dialate the glint
-        se = strel('disk',params.dilateGlint);
-        sep = strel('rectangle',[2 6]);
+        
+        % structuring element for mask size
+        sep = strel('rectangle',params.maskBox);
         
 end
 
@@ -147,7 +178,7 @@ end
 switch params.pupilFit
     
     case 'circle'
-        for i = 50:90 %numFrames
+        for i = 1:numFrames
             % Get the frame
             I                   = squeeze(grayI(:,:,i));
             % Show the frame
@@ -198,7 +229,7 @@ switch params.pupilFit
         end
         
     case 'ellipse'
-        for i = 1:numFrames
+        for i = 1:400 %numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
             
@@ -210,7 +241,7 @@ switch params.pupilFit
             % track with circles
             [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
             
-            if isNan(pCenters(1,:))
+            if isempty(pCenters)
                 continue
             else
                 % create a mask from circle fitting parameters
@@ -221,18 +252,13 @@ switch params.pupilFit
                 
                 % apply mask to grey image complement image
                 cI = imcomplement(I);
-                maskedPupil = immultiply(cI,pupilMask);
-                
-                % sharpen the image
-                pI = maskedPupil; %imsharpen(maskedPupil,'amount',params.sharpen(1));
+                maskedPupil = immultiply(cI,pupilMask); 
                 
                 % convert back to gray
-                pI = uint8(pI);
+                pI = uint8(maskedPupil);
                 % Binarize pupil
                 binP = ones(size(pI));
-                nonZeroPI = find (pI);
-                binP(pI<quantile(double(pI(nonZeroPI)),0.2)) = 0;
-                imshow(binP)
+                binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
                 
                 % remove small objects
                 binP = bwareaopen(binP, 500);
@@ -248,18 +274,18 @@ switch params.pupilFit
                 Ep = fit_ellipse(Xp,Yp);
                 
                 % store results
-                if Ep.long_axis > 0
+                if ~isempty(Ep) 
                     pupil.X(i) = Ep.Y0_in;
                     pupil.Y(i) = Ep.X0_in;
                     pupil.size(i) = Ep.long_axis;
                     pupil.circleStrength(i) = pMetric(1);
-                    pupil.ellipseParams(i) = Ep;
                 else
                     continue
                 end
                 
                 % track the glint
-                if ~params.pupilOnly
+                if ~params.pupilOnly && ~isempty(gCenters)
+
                     % create a mask from circle fitting parameters (note: glint
                     % is already dilated
                     glintMask = zeros(size(I));
@@ -268,16 +294,13 @@ switch params.pupilFit
                     
                     % apply mask to grey image
                     maskedGlint = immultiply(I,glintMask);
-                    imshow (maskedGlint)
                     
                     % convert back to gray
                     gI = uint8(maskedGlint);
                     
                     % Binarize glint
                     binG  = ones(size(gI));
-                    nonZeroGI = find (gI);
-                    binG(gI<quantile(double(gI(nonZeroGI)),0.95)) = 0;
-                    imshow(binG)
+                    binG(gI<quantile(double(I(:)),params.ellipseThresh(2))) = 0;
                     
                     % get perimeter of glint
                     binG = bwperim(binG);
@@ -287,19 +310,26 @@ switch params.pupilFit
                     Eg = fit_ellipse(Xg,Yg);
                     
                     % store results
-                    glint.X(i) = Eg.Y0_in;
-                    glint.Y(i) = Eg.X0_in;
-                    glint.circleStrength(i) = gMetric(1);
-                    glint.ellipseParams(i) = Eg;
+                    if ~isempty (Eg)
+                        glint.X(i) = Eg.Y0_in;
+                        glint.Y(i) = Eg.X0_in;
+                        glint.circleStrength(i) = gMetric(1);
+                        glint.ellipseParams(i) = Eg;
+                    else
+                        glint.X(i)= gCenters(1,1);
+                        glint.Y(i) = gCenters(1,2);
+                        glint.size(i) = gRadii(1);
+                        glint.circleStrength(i) = gMetric(1);
+                    end
                 end
                 
                 % plot results
-                if Ep.long_axis > 0
+                if ~isempty(Ep) && Ep.X0_in > 0
                     [Xp, Yp] = calcEllipse(Ep, 360);
                     if isfield(params,'outVideo')
                         hold on
                         plot(Yp, Xp);
-                        if ~params.pupilOnly
+                        if ~params.pupilOnly && ~isnan(glint.X(i))
                             hold on
                             plot(glint.X(i),glint.Y(i),'+b');
                         end
