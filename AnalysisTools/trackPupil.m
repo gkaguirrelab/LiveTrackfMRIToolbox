@@ -310,7 +310,7 @@ switch params.pupilFit
                     Eg = fit_ellipse(Xg,Yg);
                     
                     % store results
-                    if ~isempty (Eg) && strcmp(Eg.status, '')
+                    if ~isempty (Eg) && isempty (Eg.status)
                         glint.X(i) = Eg.Y0_in;
                         glint.Y(i) = Eg.X0_in;
                         glint.circleStrength(i) = gMetric(1);
@@ -324,7 +324,7 @@ switch params.pupilFit
                 end
                 
                 % plot results
-                if ~isempty(Ep) && strcmp(Eg.status, '') && Ep.X0_in > 0
+                if ~isempty(Ep) && isempty (Ep.status) && Ep.X0_in > 0
                     [Xp, Yp] = calcEllipse(Ep, 360);
                     if isfield(params,'outVideo')
                         hold on
