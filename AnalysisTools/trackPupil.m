@@ -229,7 +229,7 @@ switch params.pupilFit
         end
         
     case 'ellipse'
-        for i = 1:400 %numFrames
+        for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
             
