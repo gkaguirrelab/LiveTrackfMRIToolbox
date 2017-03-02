@@ -279,6 +279,7 @@ switch params.pupilFit
                     pupil.Y(i) = Ep.X0_in;
                     pupil.size(i) = Ep.long_axis /2; % "radius"
                     pupil.circleStrength(i) = pMetric(1);
+                    pupil.ellipseParams(i) = Ep;
                 else
                     continue
                 end
