@@ -279,7 +279,7 @@ switch params.pupilFit
                     pupil.Y(i) = Ep.X0_in;
                     pupil.size(i) = Ep.long_axis /2; % "radius"
                     pupil.circleStrength(i) = pMetric(1);
-                    pupil.ellipseParams(i) = Ep;
+                    pupil.ellipseParams(i) = Ep';
                 else
                     continue
                 end
@@ -315,7 +315,7 @@ switch params.pupilFit
                         glint.X(i) = Eg.Y0_in;
                         glint.Y(i) = Eg.X0_in;
                         glint.circleStrength(i) = gMetric(1);
-                        glint.ellipseParams(i) = Eg;
+                        glint.ellipseParams(i) = Eg';
                     else
                         glint.X(i)= gCenters(1,1);
                         glint.Y(i) = gCenters(1,2);
@@ -336,8 +336,6 @@ switch params.pupilFit
                         end
                         hold off
                     end
-                else
-                    continue
                 end
                 
                 % save frame
