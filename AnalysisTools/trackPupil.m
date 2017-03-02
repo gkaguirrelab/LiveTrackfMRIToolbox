@@ -98,7 +98,7 @@ end
 
 % params for ellipse case
 if ~isfield(params,'ellipseThresh')
-    params.ellipseThresh   = [0.95 0.9];  
+    params.ellipseThresh   = [0.97 0.9];  
 end
 if ~isfield(params,'maskBox')
     params.maskBox   = [4 8];  
@@ -277,7 +277,7 @@ switch params.pupilFit
                 if ~isempty(Ep) && isempty (Ep.status)
                     pupil.X(i) = Ep.Y0_in;
                     pupil.Y(i) = Ep.X0_in;
-                    pupil.size(i) = Ep.long_axis;
+                    pupil.size(i) = Ep.long_axis /2; % "radius"
                     pupil.circleStrength(i) = pMetric(1);
                 else
                     continue
