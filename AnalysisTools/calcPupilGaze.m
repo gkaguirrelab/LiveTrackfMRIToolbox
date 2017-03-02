@@ -91,6 +91,7 @@ switch params.trackType
         scaleCal                = load(params.scaleCalFile);
         [maxVal,maxInd]         = max(scaleCal.ScaleCal.pupilDiameterMmGroundTruth);
         mmPerPixel              = maxVal / median([scaleCal.ScaleCal.ReportRaw{maxInd}.PupilWidth_Ch01]);
+        pxPerMm = scaleCal.ScaleCal.cameraUnitsToMmWidthMean;
 end
 %% Get the transformation matrix for gaze
 switch params.trackType
@@ -268,5 +269,6 @@ switch params.trackType
 end
 eyeGaze                         = calcGaze(eyeParams);
 %% Set outputs
-pupilSize                       = eyePupil.size * mmPerPixel;
+% pupilSize                       = eyePupil.size * mmPerPixel;
+pupilSize                       = eyePupil.size ./ pxPerMm;
 gaze                            = eyeGaze;
