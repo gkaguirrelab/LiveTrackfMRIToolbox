@@ -110,6 +110,11 @@ inObj                   = VideoReader(params.inVideo);
 numFrames               = floor(inObj.Duration*inObj.FrameRate);
 grayI                   = zeros([240 320 numFrames],'uint8');
 
+% option to overwrite numFrames (for quick testing)
+if ~isfield(params,'forceNumFrames')
+    numFrames = params.forceNumFrames;
+end
+
 % Convert to gray, resize, crop to livetrack size
 for i = 1:numFrames
     thisFrame           = readFrame(inObj);
