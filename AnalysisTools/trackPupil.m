@@ -297,7 +297,9 @@ switch params.pupilFit
                     
                 % track pupil and glint    
                 case 0
-                    if ~isempty(pCenters) && ~isempty(gCenters)
+                    if isempty(gCenters)
+                        continue
+                    elseif ~isempty(pCenters) && ~isempty(gCenters)
                         % create a mask from circle fitting parameters
                         pupilMask = zeros(size(I));
                         pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
@@ -374,22 +376,23 @@ switch params.pupilFit
                             glint.size(i) = gRadii(1);
                             glint.circleStrength(i) = gMetric(1);
                         end
+                        % plot results
+                        if ~isempty(Ep) && isempty (Ep.status) && Ep.X0_in > 0
+                            [Xp, Yp] = calcEllipse(Ep, 360);
+                            if isfield(params,'outVideo')
+                                hold on
+                                plot(Yp, Xp);
+                                if ~params.pupilOnly && ~isnan(glint.X(i))
+                                    hold on
+                                    plot(glint.X(i),glint.Y(i),'+b');
+                                end
+                                hold off
+                            end
+                        end
                     end
             end
             
-            % plot results
-            if ~isempty(Ep) && isempty (Ep.status) && Ep.X0_in > 0
-                [Xp, Yp] = calcEllipse(Ep, 360);
-                if isfield(params,'outVideo')
-                    hold on
-                    plot(Yp, Xp);
-                    if ~params.pupilOnly && ~isnan(glint.X(i))
-                        hold on
-                        plot(glint.X(i),glint.Y(i),'+b');
-                    end
-                    hold off
-                end
-            end
+           
             
             % save frame
             if isfield(params,'outVideo')
