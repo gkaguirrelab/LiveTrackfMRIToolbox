@@ -39,11 +39,11 @@ params.analysisDir = 'TOME_analysis';
 
 % subject
 params.projectSubfolder = 'session2_spatialStimuli';
-params.subjectName = 'TOME_3014';
-params.sessionDate = '021717';
+params.subjectName = 'TOME_3012';
+params.sessionDate = '020317';
 
 % run
-params.runName = 'tfMRI_RETINO_PA_run01';
+params.runName = 'tfMRI_RETINO_PA_run02';
 
 ptTrackName = [params.runName '_pupilTrack.mat'];
 videoName = [params.runName '_60hz.avi'];
@@ -68,8 +68,8 @@ numFrames               = floor(inObj.Duration*inObj.FrameRate);
 grayI                   = zeros([240 320 numFrames],'uint8');
 
 % 
-% % OVERRIDE NUMFRAMES
-% numFrames = 3000;
+% OVERRIDE NUMFRAMES
+numFrames = 3000;
 
 % initialize correlation array
 correlation = zeros(1,numFrames);
@@ -85,7 +85,7 @@ end
 disp('done!');
 
 % ellipse params
-ellipseParams = trackData.glint.ellipseParams;
+ellipseParams = trackData.pupil.ellipseParams;
 
 %% cross correlate every frame with ellipse fit
 for ii = 1:numFrames
