@@ -219,7 +219,7 @@ switch params.pupilFit
                         pupil.X(i)      = pCenters(1,1);
                         pupil.Y(i)      = pCenters(1,2);
                         pupil.size(i)   = pRadii(1);
-                        pupil.strength  = pMetric(1);
+                        pupil.strength(i)  = pMetric(1);
                         if isfield(params,'outVideo')
                             viscircles(pCenters(1,:),pRadii(1),'Color','r');
                         end
@@ -346,8 +346,8 @@ switch params.pupilFit
                         % circle params for pupil
                         pupil.circleStrength(i) = pMetric(1);
                         pupil.circleRad(i) = pRadii(1);
-                        pupil.circleX = pCenters(1,1);
-                        pupil.circleY = pCenters(1,2);
+                        pupil.circleX(i) = pCenters(1,1);
+                        pupil.circleY(i) = pCenters(1,2);
                         % save frame
                         if isfield(params,'outVideo')
                             frame   = getframe(ih);
@@ -396,8 +396,8 @@ switch params.pupilFit
                             % circle params
                             pupil.circleStrength(i) = pMetric(1);
                             pupil.circleRad(i) = pRadii(1);
-                            pupil.circleX = pCenters(1,1);
-                            pupil.circleY = pCenters(1,2);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
                         else
                             % circle params
                             pupil.circleStrength(i) = pMetric(1);
