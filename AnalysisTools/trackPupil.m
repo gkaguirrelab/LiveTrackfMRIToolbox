@@ -252,6 +252,12 @@ switch params.pupilFit
                 % track pupil only
                 case 1
                     if isempty(pCenters)
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
                         continue
                     else
                         % create a mask from circle fitting parameters
@@ -288,17 +294,68 @@ switch params.pupilFit
                             pupil.X(i) = Ep.Y0_in;
                             pupil.Y(i) = Ep.X0_in;
                             pupil.size(i) = Ep.long_axis /2; % "radius"
-                            pupil.circleStrength(i) = pMetric(1);
+                            % ellipse params
                             pupil.ellipseParams(i) = Ep';
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
                         else
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                            
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
                             continue
                         end
                     end
                     
                 % track pupil and glint    
                 case 0
-                    if isempty(gCenters)
+                    if isempty(gCenters) && isempty(pCenters)
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
                         continue
+                    elseif isempty(pCenters) && ~isempty(gCenters)
+                        % circle params for glint
+                        glint.circleStrength(i) = gMetric(1);
+                        glint.circleRad(i) = gRadii(1);
+                        glint.circleX(i) = gCenters(1,1);
+                        glint.circleY(i) = gCenters(1,2);
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                        
+                    elseif ~isempty(pCenters) && isempty(gCenters)
+                        % circle params for pupil
+                        pupil.circleStrength(i) = pMetric(1);
+                        pupil.circleRad(i) = pRadii(1);
+                        pupil.circleX = pCenters(1,1);
+                        pupil.circleY = pCenters(1,2);
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                    
                     elseif ~isempty(pCenters) && ~isempty(gCenters)
                         % create a mask from circle fitting parameters
                         pupilMask = zeros(size(I));
@@ -334,9 +391,25 @@ switch params.pupilFit
                             pupil.X(i) = Ep.Y0_in;
                             pupil.Y(i) = Ep.X0_in;
                             pupil.size(i) = Ep.long_axis /2; % "radius"
-                            pupil.circleStrength(i) = pMetric(1);
+                            % ellipse params
                             pupil.ellipseParams(i) = Ep';
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX = pCenters(1,1);
+                            pupil.circleY = pCenters(1,2);
                         else
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
                             continue
                         end
                         
@@ -370,6 +443,11 @@ switch params.pupilFit
                             glint.Y(i) = Eg.X0_in;
                             glint.circleStrength(i) = gMetric(1);
                             glint.ellipseParams(i) = Eg';
+                            % circle params for glint
+                            glint.circleStrength(i) = gMetric(1);
+                            glint.circleRad(i) = gRadii(1);
+                            glint.circleX(i) = gCenters(1,1);
+                            glint.circleY(i) = gCenters(1,2);
                         else
                             glint.X(i)= gCenters(1,1);
                             glint.Y(i) = gCenters(1,2);
@@ -391,9 +469,7 @@ switch params.pupilFit
                         end
                     end
             end
-            
-           
-            
+
             % save frame
             if isfield(params,'outVideo')
                 frame   = getframe(ih);
