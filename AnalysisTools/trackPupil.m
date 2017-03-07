@@ -648,8 +648,26 @@ switch params.pupilFit
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
                         XY = [Xp, Yp];
+                        try
                         Epa = EllipseDirectFit(XY);
                         Ep = ellipse_alg2geom (Epa);
+                        catch ME
+                        end
+                        if  exist ('ME', 'var')
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            clear ME
+                            continue
+                        end
                         % store results
                         if ~isempty(Ep) && isreal(Epa)
                             pupil.X(i) = Ep.Yc;
