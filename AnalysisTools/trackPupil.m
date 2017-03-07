@@ -645,12 +645,23 @@ switch params.pupilFit
                         % get perimeter of object
                         binP = bwperim(binP);
                         
+                        % cut the perimeter
+                        [Xp, Yp] = ind2sub(size(binP),find(binP));
+                        underGlint = find (Xp > gCenters(1,2) - 5 ); %% HARDCODED THRESHOLD HERE
+
+                        if ~isempty(underGlint)
+                            binPcut = zeros(size(pI));
+                            binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+%                             imshow(binPcut)
+                            binP = binPcut;
+                        end
+                        
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
                         XY = [Xp, Yp];
                         try
-                        Epa = EllipseDirectFit(XY);
-                        Ep = ellipse_alg2geom (Epa);
+                            Epa = EllipseDirectFit(XY);
+                            Ep = ellipse_alg2geom (Epa);
                         catch ME
                         end
                         if  exist ('ME', 'var')
@@ -719,8 +730,8 @@ switch params.pupilFit
                         [Xg, Yg] = ind2sub(size(binG),find(binG));
                         XYg = [Xg, Yg];
                         try
-                        Ega = EllipseDirectFit(XYg);
-                        Eg = ellipse_alg2geom (Ega);
+                            Ega = EllipseDirectFit(XYg);
+                            Eg = ellipse_alg2geom (Ega);
                         catch ME
                         end
                         if  exist ('ME', 'var')
@@ -730,7 +741,7 @@ switch params.pupilFit
                             glint.circleStrength(i) = gMetric(1);
                             clear ME
                         end
-
+                        
                         % store results
                         if ~isempty (Eg) && isreal(Ega)
                             glint.X(i) = Eg.Yc;
@@ -750,10 +761,22 @@ switch params.pupilFit
                         end
                         % plot results
                         if ~isempty(Epa) && Ep.Xc > 0
-                            [Xp, Yp] = calcEllipse(Ep.Xc, Ep.Yc, Ep.longAx, Ep.shortAx, Ep.phi, 360);
+%                             [Xp, Yp] = calcEllipse(Ep.Xc, Ep.Yc, Ep.longAx, Ep.shortAx, Ep.phi, 360);
+                            a = num2str(Epa(1)); 
+                            b = num2str(Epa(2));
+                            c = num2str(Epa(3));
+                            d = num2str(Epa(4));
+                            e = num2str(Epa(5));
+                            f = num2str(Epa(6));
+                            
+                            % note that X and Y indices need to be swapped!
+                            eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+                            
                             if isfield(params,'outVideo')
                                 hold on
-                                plot(Yp, Xp);
+                                h= ezplot(eqt,[1, 240, 1, 320]);
+                                set (h, 'Color', 'Red')
+                                %                                 plot(Yp, Xp);
                                 if ~params.pupilOnly && ~isnan(glint.X(i))
                                     hold on
                                     plot(glint.X(i),glint.Y(i),'+b');
