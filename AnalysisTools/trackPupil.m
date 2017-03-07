@@ -155,7 +155,25 @@ switch params.pupilFit
         glint.circleStrength = nan(numFrames,1);
         
         
-    case 'ellipse'
+    case 'oldEllipse'
+        pupilRange = params.pupilRange;
+        glintRange = params.glintRange;
+        pupil.X = nan(numFrames,1);
+        pupil.Y = nan(numFrames,1);
+        pupil.size = nan(numFrames,1);
+        pupil.circleStrength = nan(numFrames,1);
+        pupil.ellipse = nan(numFrames,1);
+        glint.X = nan(numFrames,1);
+        glint.Y = nan(numFrames,1);
+        glint.size = nan(numFrames,1);
+        glint.circleStrength = nan(numFrames,1);
+        glint.ellipse = nan(numFrames,1);
+        
+        
+        % structuring element for mask size
+        sep = strel('rectangle',params.maskBox);
+        
+    case 'newEllipse'
         pupilRange = params.pupilRange;
         glintRange = params.glintRange;
         pupil.X = nan(numFrames,1);
@@ -234,7 +252,7 @@ switch params.pupilFit
             if ~mod(i,10);progBar(i);end;
         end
         
-    case 'ellipse'
+    case 'oldEllipse'
         for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
@@ -318,7 +336,7 @@ switch params.pupilFit
                         end
                     end
                     
-                % track pupil and glint    
+                    % track pupil and glint
                 case 0
                     if isempty(gCenters) && isempty(pCenters)
                         % save frame
@@ -355,7 +373,7 @@ switch params.pupilFit
                         end
                         if ~mod(i,10);progBar(i);end;
                         continue
-                    
+                        
                     elseif ~isempty(pCenters) && ~isempty(gCenters)
                         % create a mask from circle fitting parameters
                         pupilMask = zeros(size(I));
@@ -469,7 +487,265 @@ switch params.pupilFit
                         end
                     end
             end
+            
+            % save frame
+            if isfield(params,'outVideo')
+                frame   = getframe(ih);
+                writeVideo(outObj,frame);
+            end
+            if ~mod(i,10);progBar(i);end;
+        end
+        
+    case 'newEllipse'
+        for i = 1:numFrames
+            % Get the frame
+            I = squeeze(grayI(:,:,i));
+            
+            % Show the frame
+            if isfield(params,'outVideo')
+                imshow(I);
+            end
+            
+            % track with circles
+            [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
+            
+            switch params.pupilOnly
+                
+                % track pupil only
+                case 1
+                    if isempty(pCenters)
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                    else
+                        % create a mask from circle fitting parameters
+                        pupilMask = zeros(size(I));
+                        pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
+                        pupilMask = imdilate(pupilMask,sep);
+                        pupilMask = im2bw(pupilMask);
+                        
+                        % apply mask to grey image complement image
+                        cI = imcomplement(I);
+                        maskedPupil = immultiply(cI,pupilMask);
+                        
+                        % convert back to gray
+                        pI = uint8(maskedPupil);
+                        % Binarize pupil
+                        binP = ones(size(pI));
+                        binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
+                        
+                        % remove small objects
+                        binP = bwareaopen(binP, 500);
+                        
+                        % fill the holes
+                        binP = imfill(binP,'holes');
+                        
+                        % get perimeter of object
+                        binP = bwperim(binP);
+                        
+                        % Fit ellipse to pupil
+                        [Xp, Yp] = ind2sub(size(binP),find(binP));
+                        XY = [Xp, Yp];
+                        Epa = EllipseDirectFit(XY);
+                        Ep = ellipse_alg2geom (Epa);
+                        % store results
+                        if ~isempty(Ep)
+                            pupil.X(i) = Ep.Yc;
+                            pupil.Y(i) = Ep.Xc;
+                            pupil.size(i) = Ep.longAx; % "radius"
+                            % ellipse params
+                            pupil.ellipseParams(:,i) = Epa;
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                        else
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                            
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            continue
+                        end
+                    end
+                    
+                    % track pupil and glint
+                case 0
+                    if isempty(gCenters) && isempty(pCenters)
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                    elseif isempty(pCenters) && ~isempty(gCenters)
+                        % circle params for glint
+                        glint.circleStrength(i) = gMetric(1);
+                        glint.circleRad(i) = gRadii(1);
+                        glint.circleX(i) = gCenters(1,1);
+                        glint.circleY(i) = gCenters(1,2);
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                        
+                    elseif ~isempty(pCenters) && isempty(gCenters)
+                        % circle params for pupil
+                        pupil.circleStrength(i) = pMetric(1);
+                        pupil.circleRad(i) = pRadii(1);
+                        pupil.circleX(i) = pCenters(1,1);
+                        pupil.circleY(i) = pCenters(1,2);
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                        
+                    elseif ~isempty(pCenters) && ~isempty(gCenters)
+                        % create a mask from circle fitting parameters
+                        pupilMask = zeros(size(I));
+                        pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
+                        pupilMask = imdilate(pupilMask,sep);
+                        pupilMask = im2bw(pupilMask);
+                        
+                        % apply mask to grey image complement image
+                        cI = imcomplement(I);
+                        maskedPupil = immultiply(cI,pupilMask);
+                        
+                        % convert back to gray
+                        pI = uint8(maskedPupil);
+                        % Binarize pupil
+                        binP = ones(size(pI));
+                        binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
+                        
+                        % remove small objects
+                        binP = bwareaopen(binP, 500);
+                        
+                        % fill the holes
+                        binP = imfill(binP,'holes');
+                        
+                        % get perimeter of object
+                        binP = bwperim(binP);
+                        
+                        % Fit ellipse to pupil
+                        [Xp, Yp] = ind2sub(size(binP),find(binP));
+                        XY = [Xp, Yp];
+                        Epa = EllipseDirectFit(XY);
+                        Ep = ellipse_alg2geom (Epa);
+                        % store results
+                        if ~isempty(Ep) && isreal(Epa)
+                            pupil.X(i) = Ep.Yc;
+                            pupil.Y(i) = Ep.Xc;
+                            pupil.size(i) = Ep.longAx; % "radius"
+                            % ellipse params
+                            pupil.ellipseParams(:,i) = Epa;
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                        else
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            continue
+                        end
+                        
+                        % track the glint
+                        % create a mask from circle fitting parameters (note: glint
+                        % is already dilated
+                        glintMask = zeros(size(I));
+                        glintMask = insertShape(glintMask,'FilledCircle',[gCenters(1,1) gCenters(1,2) gRadii(1)],'Color','white');
+                        glintMask = im2bw(glintMask);
+                        
+                        % apply mask to grey image
+                        maskedGlint = immultiply(I,glintMask);
+                        
+                        % convert back to gray
+                        gI = uint8(maskedGlint);
+                        
+                        % Binarize glint
+                        binG  = ones(size(gI));
+                        binG(gI<quantile(double(I(:)),params.ellipseThresh(2))) = 0;
+                        
+                        % get perimeter of glint
+                        binG = bwperim(binG);
+                        
+                        % Fit ellipse to glint
+                        [Xg, Yg] = ind2sub(size(binG),find(binG));
+                        XYg = [Xg, Yg];
+                        try
+                        Ega = EllipseDirectFit(XYg);
+                        Eg = ellipse_alg2geom (Ega);
+                        catch ME
+                        end
+                        if  exist ('ME', 'var')
+                            glint.X(i)= gCenters(1,1);
+                            glint.Y(i) = gCenters(1,2);
+                            glint.size(i) = gRadii(1);
+                            glint.circleStrength(i) = gMetric(1);
+                            clear ME
+                        end
 
+                        % store results
+                        if ~isempty (Eg) && isreal(Ega)
+                            glint.X(i) = Eg.Yc;
+                            glint.Y(i) = Eg.Xc;
+                            glint.circleStrength(i) = gMetric(1);
+                            glint.ellipseParams(:,i) = Ega;
+                            % circle params for glint
+                            glint.circleStrength(i) = gMetric(1);
+                            glint.circleRad(i) = gRadii(1);
+                            glint.circleX(i) = gCenters(1,1);
+                            glint.circleY(i) = gCenters(1,2);
+                        else
+                            glint.X(i)= gCenters(1,1);
+                            glint.Y(i) = gCenters(1,2);
+                            glint.size(i) = gRadii(1);
+                            glint.circleStrength(i) = gMetric(1);
+                        end
+                        % plot results
+                        if ~isempty(Epa) && Ep.Xc > 0
+                            [Xp, Yp] = calcEllipse(Ep.Xc, Ep.Yc, Ep.longAx, Ep.shortAx, Ep.phi, 360);
+                            if isfield(params,'outVideo')
+                                hold on
+                                plot(Yp, Xp);
+                                if ~params.pupilOnly && ~isnan(glint.X(i))
+                                    hold on
+                                    plot(glint.X(i),glint.Y(i),'+b');
+                                end
+                                hold off
+                            end
+                        end
+                    end
+            end
+            
             % save frame
             if isfield(params,'outVideo')
                 frame   = getframe(ih);
