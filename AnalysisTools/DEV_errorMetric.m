@@ -43,7 +43,7 @@ params.subjectName = 'TOME_3014';
 params.sessionDate = '021717';
 
 % run
-params.runName = 'tfMRI_FLASH_AP_run01';
+params.runName = 'tfMRI_RETINO_PA_run01';
 
 ptTrackName = [params.runName '_testTrack.mat'];
 videoName = [params.runName '_60hz.avi'];
@@ -178,49 +178,23 @@ end
 
 
 
-%% cross correlate with circle fit - BROKEN
+%% cross correlate with circle fit
 
-for ii = 1:numFrames
-    circleParams(ii).a = trackData.pupil.circleRad(ii);
-    circleParams(ii).b = trackData.pupil.circleRad(ii);
-    circleParams(ii).X0_in = trackData.pupil.circleX(ii);
-    circleParams(ii).Y0_in = trackData.pupil.circleY(ii);
-    circleParams(ii).phi = 0;
-end
 for ii = 1:numFrames
     
     grayFrame = squeeze(grayI(:,:,ii));
     
-    % create a gray image of the ellipse fit
+    % create a gray image of the circle fit
     bwFit = zeros([240 320]);
-    
-    
-    cParams = circleParams(ii);
-    if ~isempty(cParams.X0_in)
-        [Xp, Yp] = calcEllipse(cParams(ii), 360);
-        try
-            idx = sub2ind([240 320], Xp, Yp);
-        catch ME
-        end
-        if exist ('ME', 'var')
-            cCorrelation (ii) = NaN;
-            clear ME
-            continue
-        end
-        bwFit(idx) = 1;
-        % fill the holes
-        bwFit = imfill(bwFit,'holes');
-        
-        % invert (so that pupil is black)
-        bwFit = imcomplement(bwFit);
-        
-        % convert to gray
-        grayFit = uint8(bwFit);
-        
-        % get correlation value for this frame
-        cCorrelation(ii) = (corr2(grayFrame,grayFit));
-        
-    end
+    bwFit = insertShape(bwFit,'FilledCircle',[trackData.pupil.circleX(ii) trackData.pupil.circleY(ii) trackData.pupil.circleRad(ii)*1.5],'Color','white');
+    bwFit = im2bw(bwFit);
+
+    % get the fit complement (so that pupil is black
+    bwFit = imcomplement(bwFit);
+ 
+    % get correlation value for this frame
+    cCorrelation(ii) = (corr2(grayFrame,bwFit));
+
     
 end
 
@@ -229,30 +203,36 @@ end
 fig1 = fullFigure;
 plot (eCorrelation)
 hold on
-plot (pCorrelation)
+plot (cCorrelation)
 hold on
 plot (trackData.pupil.size ./100)
 hold off
 xlabel('Frames')
-legend ('Fullframe correlation' , 'Patch correlation', 'pupil size in px /100 (as tracked by ellipse)')
-title([params.subjectName ' ' params.runName  ] , 'Interpreter', 'none')
-
-%% verify that those are blinks
-nanFrames =  find(isnan(eCorrelation));
-
-for jj = 1: length (nanFrames)
-     grayFrame = squeeze(grayI(:,:,nanFrames(jj)));
-     imshow (grayFrame)
-     pause
-end
+legend ('Ellipse correlation' , 'Circle Fullframe correlation', 'pupil size in px /100 (as tracked by ellipse)')
+title([params.subjectName ' ' params.runName ' - FULLFRAME' ] , 'Interpreter', 'none')
 
 
-%% verify that those are blinks
-zeroFrames =  find((eCorrelation ==0));
-
-for jj = 1: length (zeroFrames)
-     grayFrame = squeeze(grayI(:,:,zeroFrames(jj)));
-     imshow (grayFrame)
-     pause   
-end
+% %% patch correlation
+% fig2 =  fullFigure;
+% plot (pCorrelation)
+% hold on
+% 
+% %% verify that those are blinks
+% nanFrames =  find(isnan(eCorrelation));
+% 
+% for jj = 1: length (nanFrames)
+%      grayFrame = squeeze(grayI(:,:,nanFrames(jj)));
+%      imshow (grayFrame)
+%      pause
+% end
+% 
+% 
+% %% verify that those are blinks
+% zeroFrames =  find((eCorrelation ==0));
+% 
+% for jj = 1: length (zeroFrames)
+%      grayFrame = squeeze(grayI(:,:,zeroFrames(jj)));
+%      imshow (grayFrame)
+%      pause   
+% end
 
