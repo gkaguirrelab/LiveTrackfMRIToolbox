@@ -26,12 +26,12 @@ params.analysisDir = 'TOME_analysis';
 
 % subject
 params.projectSubfolder = 'session2_spatialStimuli';
-params.subjectName = 'TOME_3005';
-params.sessionDate = '100316';
+params.subjectName = 'TOME_3014';
+params.sessionDate = '021717';
 
 
 % run
-params.runName = 'tfMRI_RETINO_PA_run01';
+params.runName = 'tfMRI_RETINO_PA_run02';
 
 % calibration
 calName = 'GazeCal01_LTcal.mat';
@@ -52,13 +52,14 @@ params.acqRate = 60;
 params.pupilFit = 'ellipse';
 % params.pupilFit = 'circle';
 params.inVideo = fullfile(outDir,[params.runName '_60hz.avi']);
-params.outVideo = fullfile(outDir,[params.runName '_testTrack.avi']);
-params.outMat = fullfile(outDir, [params.runName '_testTrack.mat']);
-params.ellipseThresh   = [0.9 0.9];
-params.threshVals = [0.076 0.999];
+params.outVideo = fullfile(outDir,[params.runName '_perimeter.avi']);
+params.outMat = fullfile(outDir, [params.runName '_perimeter.mat']);
+params.ellipseThresh   = [0.963 0.9];
+params.threshVals = [0.06 0.999];
 
 
-params.forceNumFrames = 400;
+params.forceNumFrames = 1500;
+% [pupil , iris, eyelid] = irisFit (params);
 trackPupil(params);
 
 
