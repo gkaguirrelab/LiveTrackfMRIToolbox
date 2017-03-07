@@ -31,12 +31,12 @@ Eg.Yc = ((2 * A * E) - (B * D))/ den;
 % phi =  angle from the positive horizontal axis (X) to the ellipse's major axis    
 if B == 0 && A < C
     Eg.phi = 0;
-    Eg.Xradius = longAx;
-    Eg.Yradius = shortAx;
+    Eg.Xradius = Eg.longAx;
+    Eg.Yradius = Eg.shortAx;
 elseif B == 0 && A > C
     Eg.phi = 90; % in degrees
-    Eg.Yradius = longAx;
-    Eg.Xradius = shortAx;
+    Eg.Yradius = Eg.longAx;
+    Eg.Xradius = Eg.shortAx;
 else
     Eg.phi = deg2rad(atan((C - A - sqrt((A - C)^2 + B^2))/B)); % in rad
 end
