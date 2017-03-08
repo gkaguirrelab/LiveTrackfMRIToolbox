@@ -23,7 +23,7 @@
 		"type": "include",
 		"update": "",
 		"url": "",
-                "subfolder": "",
+                "subfolder": ""
 	},
         {
 		"flavor": "",
@@ -35,21 +35,21 @@
 		"type": "include",
 		"update": "",
 		"url": "",
-                "subfolder": "",
+                "subfolder": ""
 	},
  	{
 		"flavor": "",
 		"hook": "",
 		"importance": "",
 		"localHookTemplate": "",
-		"name": "quad fit",
+		"name": "quadfit",
 		"pathPlacement": "append",
 		"subfolder": "",
 		"toolboxRoot": "",
 		"type": "webget",
 		"update": "",
 		"url": "https:\/\/www.mathworks.com\/matlabcentral\/mlc-downloads\/downloads\/submissions\/45356\/versions\/5\/download\/zip"
-	},
+	}
 
 ]
 
