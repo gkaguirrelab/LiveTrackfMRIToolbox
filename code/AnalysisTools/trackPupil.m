@@ -485,7 +485,7 @@ switch params.pupilFit
                         
                         % get errorMetric
                         [e,d,~,~] = ellipse_distance(Xp, Yp, Epi);
-                        distanceErrorMetric = sqrt(sum(d.^2));
+                        distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
                         
                         % store results
                         if ~isempty(Ep)
@@ -581,7 +581,7 @@ switch params.pupilFit
                             
                             % get errorMetric
                             [e,d,~,~] = ellipse_distance(Xp, Yp, Epi);
-                            distanceErrorMetric = sqrt(sum(d.^2));
+                            distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
                         catch ME
                         end
                         if  exist ('ME', 'var')
@@ -642,7 +642,7 @@ switch params.pupilFit
                             
                             % get errorMetric
                             [eg,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
-                            gdistanceErrorMetric = sqrt(sum(dg.^2));
+                            gdistanceErrorMetric = nanmedian(sqrt(sum(dg.^2)));
                         catch ME
                         end
                         if  exist ('ME', 'var')
