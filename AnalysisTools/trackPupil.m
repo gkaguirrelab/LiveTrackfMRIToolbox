@@ -468,16 +468,22 @@ switch params.pupilFit
                         
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        Epa = ellipsefit_direct(Xp,Yp);
-                        Ep = ellipse_im2ex(Epa);
+                        Epi = ellipsefit_direct(Xp,Yp);
+                        Ep = ellipse_im2ex(Epi);
+                        
+                        % get errorMetric
+                        [e,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                        distanceErrorMetric = sqrt(sum(d.^2));
+                        
                         % store results
                         if ~isempty(Ep)
                             pupil.X(i) = Ep(2);
                             pupil.Y(i) = Ep(1);
                             pupil.size(i) = Ep(3); % "radius"
                             % ellipse params
-                            pupil.implicitEllipseParams(:,i) = Epa;
+                            pupil.implicitEllipseParams(:,i) = Epi;
                             pupil.explicitEllipseParams(:,i) = Ep;
+                            pupil.distanceErrorMetric(i) = distanceErrorMetric;
                             % circle patch params
                             pupil.circleStrength(i) = pMetric(1);
                             pupil.circleRad(i) = pRadii(1);
@@ -557,10 +563,13 @@ switch params.pupilFit
                         
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        XY = [Xp, Yp];
                         try
-                            Epa = EllipseDirectFit(XY);
-                            Ep = ellipse_alg2geom (Epa);
+                            Epi = ellipsefit_direct(Xp,Yp);
+                            Ep = ellipse_im2ex(Epi);
+                            
+                            % get errorMetric
+                            [e,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                            distanceErrorMetric = sqrt(sum(d.^2));
                         catch ME
                         end
                         if  exist ('ME', 'var')
@@ -579,12 +588,14 @@ switch params.pupilFit
                             continue
                         end
                         % store results
-                        if ~isempty(Ep) && isreal(Epa)
-                            pupil.X(i) = Ep.Yc;
-                            pupil.Y(i) = Ep.Xc;
-                            pupil.size(i) = Ep.longAx; % "radius"
+                        if ~isempty(Ep) && isreal(Epi)
+                            pupil.X(i) = Ep(2);
+                            pupil.Y(i) = Ep(1);
+                            pupil.size(i) = Ep(3); % "radius"
                             % ellipse params
-                            pupil.ellipseParams(:,i) = Epa;
+                            pupil.implicitEllipseParams(:,i) = Epi;
+                            pupil.explicitEllipseParams(:,i) = Ep;
+                            pupil.distanceErrorMetric(i) = distanceErrorMetric;
                             % circle params
                             pupil.circleStrength(i) = pMetric(1);
                             pupil.circleRad(i) = pRadii(1);
@@ -611,10 +622,13 @@ switch params.pupilFit
                         
                         % Fit ellipse to glint
                         [Xg, Yg] = ind2sub(size(binG),find(binG));
-                        XYg = [Xg, Yg];
                         try
-                            Ega = EllipseDirectFit(XYg);
-                            Eg = ellipse_alg2geom (Ega);
+                            Egi = EllipseDirectFit(Xg,Yg);
+                            Eg = ellipse_im2ex(Egi);
+                            
+                            % get errorMetric
+                            [eg,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
+                            gdistanceErrorMetric = sqrt(sum(dg.^2));
                         catch ME
                         end
                         if  exist ('ME', 'var')
@@ -626,11 +640,13 @@ switch params.pupilFit
                         end
                         
                         % store results
-                        if ~isempty (Eg) && isreal(Ega)
-                            glint.X(i) = Eg.Yc;
-                            glint.Y(i) = Eg.Xc;
+                        if ~isempty (Eg) && isreal(Egi)
+                            glint.X(i) = Eg(2);
+                            glint.Y(i) = Eg(1);
                             glint.circleStrength(i) = gMetric(1);
-                            glint.ellipseParams(:,i) = Ega;
+                            glint.implicitEllipseParams(:,i) = Egi;
+                            glint.explicitEllipseParams(:,i) = Eg;
+                            glint.distanceErrorMetric(i) = gdistanceErrorMetric;
                             % circle params for glint
                             glint.circleStrength(i) = gMetric(1);
                             glint.circleRad(i) = gRadii(1);
@@ -643,14 +659,14 @@ switch params.pupilFit
                             glint.circleStrength(i) = gMetric(1);
                         end
                         % plot results
-                        if ~isempty(Epa) && Ep.Xc > 0
+                        if ~isempty(Epi) && Ep.Xc > 0
 %                             [Xp, Yp] = calcEllipse(Ep.Xc, Ep.Yc, Ep.longAx, Ep.shortAx, Ep.phi, 360);
-                            a = num2str(Epa(1)); 
-                            b = num2str(Epa(2));
-                            c = num2str(Epa(3));
-                            d = num2str(Epa(4));
-                            e = num2str(Epa(5));
-                            f = num2str(Epa(6));
+                            a = num2str(Epi(1)); 
+                            b = num2str(Epi(2));
+                            c = num2str(Epi(3));
+                            d = num2str(Epi(4));
+                            e = num2str(Epi(5));
+                            f = num2str(Epi(6));
                             
                             % note that X and Y indices need to be swapped!
                             eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
