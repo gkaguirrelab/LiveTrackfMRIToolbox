@@ -278,30 +278,8 @@ switch params.pupilFit
                         if ~mod(i,10);progBar(i);end;
                         continue
                     else
-                        % create a mask from circle fitting parameters
-                        pupilMask = zeros(size(I));
-                        pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
-                        pupilMask = imdilate(pupilMask,sep);
-                        pupilMask = im2bw(pupilMask);
-                        
-                        % apply mask to grey image complement image
-                        cI = imcomplement(I);
-                        maskedPupil = immultiply(cI,pupilMask);
-                        
-                        % convert back to gray
-                        pI = uint8(maskedPupil);
-                        % Binarize pupil
-                        binP = ones(size(pI));
-                        binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
-                        
-                        % remove small objects
-                        binP = bwareaopen(binP, 500);
-                        
-                        % fill the holes
-                        binP = imfill(binP,'holes');
-                        
-                        % get perimeter of object
-                        binP = bwperim(binP);
+                        % get pupil perimeter
+                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
                         
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
@@ -375,30 +353,9 @@ switch params.pupilFit
                         continue
                         
                     elseif ~isempty(pCenters) && ~isempty(gCenters)
-                        % create a mask from circle fitting parameters
-                        pupilMask = zeros(size(I));
-                        pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
-                        pupilMask = imdilate(pupilMask,sep);
-                        pupilMask = im2bw(pupilMask);
                         
-                        % apply mask to grey image complement image
-                        cI = imcomplement(I);
-                        maskedPupil = immultiply(cI,pupilMask);
-                        
-                        % convert back to gray
-                        pI = uint8(maskedPupil);
-                        % Binarize pupil
-                        binP = ones(size(pI));
-                        binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
-                        
-                        % remove small objects
-                        binP = bwareaopen(binP, 500);
-                        
-                        % fill the holes
-                        binP = imfill(binP,'holes');
-                        
-                        % get perimeter of object
-                        binP = bwperim(binP);
+                        % get pupil perimeter
+                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
                         
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
@@ -432,24 +389,8 @@ switch params.pupilFit
                         end
                         
                         % track the glint
-                        % create a mask from circle fitting parameters (note: glint
-                        % is already dilated
-                        glintMask = zeros(size(I));
-                        glintMask = insertShape(glintMask,'FilledCircle',[gCenters(1,1) gCenters(1,2) gRadii(1)],'Color','white');
-                        glintMask = im2bw(glintMask);
-                        
-                        % apply mask to grey image
-                        maskedGlint = immultiply(I,glintMask);
-                        
-                        % convert back to gray
-                        gI = uint8(maskedGlint);
-                        
-                        % Binarize glint
-                        binG  = ones(size(gI));
-                        binG(gI<quantile(double(I(:)),params.ellipseThresh(2))) = 0;
-                        
-                        % get perimeter of glint
-                        binG = bwperim(binG);
+                        % get glint perimeter
+                        [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
                         
                         % Fit ellipse to glint
                         [Xg, Yg] = ind2sub(size(binG),find(binG));
@@ -522,44 +463,22 @@ switch params.pupilFit
                         if ~mod(i,10);progBar(i);end;
                         continue
                     else
-                        % create a mask from circle fitting parameters
-                        pupilMask = zeros(size(I));
-                        pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
-                        pupilMask = imdilate(pupilMask,sep);
-                        pupilMask = im2bw(pupilMask);
-                        
-                        % apply mask to grey image complement image
-                        cI = imcomplement(I);
-                        maskedPupil = immultiply(cI,pupilMask);
-                        
-                        % convert back to gray
-                        pI = uint8(maskedPupil);
-                        % Binarize pupil
-                        binP = ones(size(pI));
-                        binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
-                        
-                        % remove small objects
-                        binP = bwareaopen(binP, 500);
-                        
-                        % fill the holes
-                        binP = imfill(binP,'holes');
-                        
-                        % get perimeter of object
-                        binP = bwperim(binP);
+                        % get pupil perimeter
+                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
                         
                         % Fit ellipse to pupil
                         [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        XY = [Xp, Yp];
-                        Epa = EllipseDirectFit(XY);
-                        Ep = ellipse_alg2geom (Epa);
+                        Epa = ellipsefit_direct(Xp,Yp);
+                        Ep = ellipse_im2ex(Epa);
                         % store results
                         if ~isempty(Ep)
-                            pupil.X(i) = Ep.Yc;
-                            pupil.Y(i) = Ep.Xc;
-                            pupil.size(i) = Ep.longAx; % "radius"
+                            pupil.X(i) = Ep(2);
+                            pupil.Y(i) = Ep(1);
+                            pupil.size(i) = Ep(3); % "radius"
                             % ellipse params
-                            pupil.ellipseParams(:,i) = Epa;
-                            % circle params
+                            pupil.implicitEllipseParams(:,i) = Epa;
+                            pupil.explicitEllipseParams(:,i) = Ep;
+                            % circle patch params
                             pupil.circleStrength(i) = pMetric(1);
                             pupil.circleRad(i) = pRadii(1);
                             pupil.circleX(i) = pCenters(1,1);
@@ -620,40 +539,20 @@ switch params.pupilFit
                         continue
                         
                     elseif ~isempty(pCenters) && ~isempty(gCenters)
-                        % create a mask from circle fitting parameters
-                        pupilMask = zeros(size(I));
-                        pupilMask = insertShape(pupilMask,'FilledCircle',[pCenters(1,1) pCenters(1,2) pRadii(1)],'Color','white');
-                        pupilMask = imdilate(pupilMask,sep);
-                        pupilMask = im2bw(pupilMask);
+                        % get pupil perimeter
+                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
                         
-                        % apply mask to grey image complement image
-                        cI = imcomplement(I);
-                        maskedPupil = immultiply(cI,pupilMask);
-                        
-                        % convert back to gray
-                        pI = uint8(maskedPupil);
-                        % Binarize pupil
-                        binP = ones(size(pI));
-                        binP(pI<quantile(double(cI(:)),params.ellipseThresh(1))) = 0;
-                        
-                        % remove small objects
-                        binP = bwareaopen(binP, 500);
-                        
-                        % fill the holes
-                        binP = imfill(binP,'holes');
-                        
-                        % get perimeter of object
-                        binP = bwperim(binP);
-                        
-                        % cut the perimeter
-                        [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        underGlint = find (Xp > gCenters(1,2) - 5 ); %% HARDCODED THRESHOLD HERE
-
-                        if ~isempty(underGlint)
-                            binPcut = zeros(size(pI));
-                            binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-%                             imshow(binPcut)
-                            binP = binPcut;
+                        if params.cutPupil
+                            % cut the perimeter
+                            [Xp, Yp] = ind2sub(size(binP),find(binP));
+                            underGlint = find (Xp > gCenters(1,2) - 5 ); %% HARDCODED THRESHOLD HERE
+                            
+                            if ~isempty(underGlint)
+                                binPcut = zeros(size(pI));
+                                binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+%                               imshow(binPcut)
+                                binP = binPcut;
+                            end
                         end
                         
                         % Fit ellipse to pupil
@@ -707,24 +606,8 @@ switch params.pupilFit
                         end
                         
                         % track the glint
-                        % create a mask from circle fitting parameters (note: glint
-                        % is already dilated
-                        glintMask = zeros(size(I));
-                        glintMask = insertShape(glintMask,'FilledCircle',[gCenters(1,1) gCenters(1,2) gRadii(1)],'Color','white');
-                        glintMask = im2bw(glintMask);
-                        
-                        % apply mask to grey image
-                        maskedGlint = immultiply(I,glintMask);
-                        
-                        % convert back to gray
-                        gI = uint8(maskedGlint);
-                        
-                        % Binarize glint
-                        binG  = ones(size(gI));
-                        binG(gI<quantile(double(I(:)),params.ellipseThresh(2))) = 0;
-                        
-                        % get perimeter of glint
-                        binG = bwperim(binG);
+                        % getGlintPerimeter
+                        [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
                         
                         % Fit ellipse to glint
                         [Xg, Yg] = ind2sub(size(binG),find(binG));
@@ -812,65 +695,5 @@ end
 
 
 
-function [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange)
 
-% create blurring filter
-filtSize = round([0.01*min(params.imageSize) 0.01*min(params.imageSize) 0.01*min(params.imageSize)]);
-
-% structuring element to dialate the glint
-se = strel('disk',params.dilateGlint);
-
-% Filter for pupil
-padP = padarray(I,[size(I,1)/2 size(I,2)/2], 128);
-h = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
-pI = imfilter(padP,h);
-pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
-% Binarize pupil
-binP = ones(size(pI));
-binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
-
-% Filter for glint
-gI = ones(size(I));
-gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
-padG = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
-h = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
-gI = imfilter(padG,h);
-gI = gI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
-% Binarize glint
-binG  = zeros(size(gI));
-binG(gI>0.01) = 1;
-dbinG = imdilate(binG,se);
-
-% Find the pupil
-[pCenters, pRadii,pMetric] = imfindcircles(binP,pupilRange,'ObjectPolarity','dark',...
-    'Sensitivity',params.sensitivity);
-% Find the glint
-if ~params.pupilOnly
-    [gCenters, gRadii,gMetric] = imfindcircles(dbinG,glintRange,'ObjectPolarity','bright',...
-        'Sensitivity',params.sensitivity);
-else
-    gCenters = [NaN NaN];
-    gRadii = NaN;
-    gMetric = NaN;
-end
-
-% Remove glints outside the pupil
-if ~params.pupilOnly
-    if ~isempty(pCenters) && ~isempty(gCenters)
-        dists           = sqrt( (gCenters(:,1) - pCenters(1,1)).^2 + (gCenters(:,2) - pCenters(1,2)).^2 );
-        gCenters(dists>(1 + params.glintOut)*(pRadii(1)),:) = [];
-        gRadii(dists>(1 + params.glintOut)*(pRadii(1))) = [];
-    end
-end
-
-% adjust the pupil range (for quicker processing)
-if ~isempty(pCenters)
-    pupilRange(1)   = min(floor(pRadii(1)*(1-params.rangeAdjust)),params.pupilRange(2));
-    pupilRange(2)   = max(ceil(pRadii(1)*(1 + params.rangeAdjust)),params.pupilRange(1));
-else
-    pupilRange(1)   = max(ceil(pupilRange(1)*(1 - params.rangeAdjust)),params.pupilRange(1));
-    pupilRange(2)   = min(ceil(pupilRange(2)*(1 + params.rangeAdjust)),params.pupilRange(2));
-end
-
-end
 
