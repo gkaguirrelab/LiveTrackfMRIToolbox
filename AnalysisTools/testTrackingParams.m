@@ -31,7 +31,7 @@ params.sessionDate = '021717';
 
 
 % run
-params.runName = 'tfMRI_RETINO_PA_run02';
+params.runName = 'tfMRI_FLASH_AP_run01';
 
 % calibration
 calName = 'GazeCal01_LTcal.mat';
@@ -49,16 +49,17 @@ processingDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,pa
 %% params for tracking
 outDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
 params.acqRate = 60;
-params.pupilFit = 'ellipse';
+params.pupilFit = 'newEllipse';
 % params.pupilFit = 'circle';
 params.inVideo = fullfile(outDir,[params.runName '_60hz.avi']);
-params.outVideo = fullfile(outDir,[params.runName '_perimeter.avi']);
-params.outMat = fullfile(outDir, [params.runName '_perimeter.mat']);
+params.outVideo = fullfile(outDir,[params.runName '_fullEllipse.avi']);
+params.outMat = fullfile(outDir, [params.runName '_fullEllipse.mat']);
 params.ellipseThresh   = [0.963 0.9];
 params.threshVals = [0.06 0.999];
+params.cutPupil = 0;
 
 
-params.forceNumFrames = 1500;
+params.forceNumFrames = 4000;
 % [pupil , iris, eyelid] = irisFit (params);
 trackPupil(params);
 
