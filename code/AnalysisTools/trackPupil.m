@@ -192,6 +192,12 @@ switch params.pupilFit
         % structuring element for pupil mask size
         sep = strel('rectangle',params.maskBox);
         
+        % pupil flags
+        pupil.flags.fittingFailure = nan(numFrames,1);
+        pupil.flags.noGlint = nan(numFrames,1);
+        pupil.flags.noPupil = nan(numFrames,1);
+        pupil.flags.cutPupil = nan(numFrames,1);
+        
         % main glint params
         glint.X = nan(numFrames,1);
         glint.Y = nan(numFrames,1);
@@ -208,6 +214,12 @@ switch params.pupilFit
         glint.circleX = nan(numFrames,1);
         glint.circleY = nan(numFrames,1);
         glint.circleStrength = nan(numFrames,1);
+        
+        % glint flags
+        glint.flags.fittingFailure = nan(numFrames,1);
+        glint.flags.noGlint = nan(numFrames,1);
+        glint.flags.noPupil = nan(numFrames,1);
+        glint.flags.cutPupil = nan(numFrames,1);
      
 end
 
@@ -312,7 +324,7 @@ switch params.pupilFit
                         if ~isempty(Ep)
                             pupil.X(i) = Ep(2);
                             pupil.Y(i) = Ep(1);
-                            pupil.size(i) = Ep(3); % "radius"
+                            pupil.size(i) = Ep(3); % " bigger radius"
                             % ellipse params
                             pupil.implicitEllipseParams(i,:) = Epi';
                             pupil.explicitEllipseParams(i,:) = Ep';
@@ -378,6 +390,53 @@ switch params.pupilFit
                         continue
                         
                     elseif ~isempty(pCenters) && ~isempty(gCenters)
+                        % First, track the glint
+                        % getGlintPerimeter
+                        [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
+                        
+                        % Fit ellipse to glint
+                        [Xg, Yg] = ind2sub(size(binG),find(binG));
+                        try
+                            Egi = ellipsefit_direct(Xg,Yg);
+                            Eg = ellipse_im2ex(Egi);
+                            
+                            % get errorMetric
+                            [eg,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
+                            gdistanceErrorMetric = nanmedian(sqrt(sum(dg.^2)));
+                        catch ME
+                        end
+                        if  exist ('ME', 'var')
+                            glint.X(i)= gCenters(1,1);
+                            glint.Y(i) = gCenters(1,2);
+                            glint.size(i) = gRadii(1);
+                            glint.circleStrength(i) = gMetric(1);
+                            clear ME
+                        end
+                        
+                        % store results
+                        if exist ('Eg','var')
+                            if ~isempty (Eg) && isreal(Egi)
+                                glint.X(i) = Eg(2);
+                                glint.Y(i) = Eg(1);
+                                glint.circleStrength(i) = gMetric(1);
+                                glint.implicitEllipseParams(i,:) = Egi';
+                                glint.explicitEllipseParams(i,:) = Eg';
+                                glint.distanceErrorMetric(i) = gdistanceErrorMetric;
+                                % circle params for glint
+                                glint.circleStrength(i) = gMetric(1);
+                                glint.circleRad(i) = gRadii(1);
+                                glint.circleX(i) = gCenters(1,1);
+                                glint.circleY(i) = gCenters(1,2);
+                            end
+                        else
+                            glint.X(i)= gCenters(1,1);
+                            glint.Y(i) = gCenters(1,2);
+                            glint.size(i) = gRadii(1);
+                            glint.circleStrength(i) = gMetric(1);
+                        end
+                        
+                        
+                        
                         % get pupil perimeter
                         [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
                         
@@ -451,50 +510,7 @@ switch params.pupilFit
                             continue
                         end
                         
-                        % track the glint
-                        % getGlintPerimeter
-                        [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
-                        
-                        % Fit ellipse to glint
-                        [Xg, Yg] = ind2sub(size(binG),find(binG));
-                        try
-                            Egi = ellipsefit_direct(Xg,Yg);
-                            Eg = ellipse_im2ex(Egi);
-                            
-                            % get errorMetric
-                            [eg,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
-                            gdistanceErrorMetric = nanmedian(sqrt(sum(dg.^2)));
-                        catch ME
-                        end
-                        if  exist ('ME', 'var')
-                            glint.X(i)= gCenters(1,1);
-                            glint.Y(i) = gCenters(1,2);
-                            glint.size(i) = gRadii(1);
-                            glint.circleStrength(i) = gMetric(1);
-                            clear ME
-                        end
-                        
-                        % store results
-                        if exist ('Eg','var')
-                            if ~isempty (Eg) && isreal(Egi)
-                                glint.X(i) = Eg(2);
-                                glint.Y(i) = Eg(1);
-                                glint.circleStrength(i) = gMetric(1);
-                                glint.implicitEllipseParams(i,:) = Egi';
-                                glint.explicitEllipseParams(i,:) = Eg';
-                                glint.distanceErrorMetric(i) = gdistanceErrorMetric;
-                                % circle params for glint
-                                glint.circleStrength(i) = gMetric(1);
-                                glint.circleRad(i) = gRadii(1);
-                                glint.circleX(i) = gCenters(1,1);
-                                glint.circleY(i) = gCenters(1,2);
-                            end
-                        else
-                            glint.X(i)= gCenters(1,1);
-                            glint.Y(i) = gCenters(1,2);
-                            glint.size(i) = gRadii(1);
-                            glint.circleStrength(i) = gMetric(1);
-                        end
+
                         % plot results
                         if ~isempty(Epi) && Ep(1) > 0
 %                             [Xp, Yp] = calcEllipse(Ep.Xc, Ep.Yc, Ep.longAx, Ep.shortAx, Ep.phi, 360);
