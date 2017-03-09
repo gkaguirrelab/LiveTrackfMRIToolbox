@@ -8,7 +8,7 @@ function [pupil, glint, params] = trackPupil(params)
 % mask to the original video. A simple circular fit can be used for
 % tracking, but the resulting data appears noisier and generally less
 % accurate.
-% 
+%
 %   Usage:
 %       [pupil,glint,params]       = trackPupil(params)
 %
@@ -96,12 +96,21 @@ if ~isfield(params,'dilateGlint')
 end
 
 
-% params for ellipse case
+% params for ellipse fit
 if ~isfield(params,'ellipseThresh')
     params.ellipseThresh   = [0.97 0.9];
 end
 if ~isfield(params,'maskBox')
     params.maskBox   = [4 8];
+end
+if ~isfield(params,'overGlintCut')
+    params.overGlintCut = 5;
+end
+if ~isfield(params,'cutEveryFrame')
+    params.cutEveryFrame = 0;
+end
+if ~isfield(params,'fittingErrorThresh')
+    params.fittingErrorThresh = 10;
 end
 
 %% Load video
@@ -139,7 +148,7 @@ clear RGB inObj
 disp('Starting tracking with the following parameters:');
 disp('Track pupil only: ')
 disp(params.pupilOnly)
-disp('Fit method: ') 
+disp('Fit method: ')
 disp(params.pupilFit)
 disp('Circle threshold: ')
 disp(params.circleThresh)
@@ -176,19 +185,20 @@ switch params.pupilFit
         pupil.implicitEllipseParams = nan(numFrames,6);
         pupil.explicitEllipseParams= nan(numFrames,5);
         pupil.distanceErrorMetric= nan(numFrames,1);
+        pupil.pixelsOnPerimeter = nan(numFrames,1);
         
         % cut fit params
+        pupil.cutPixels = nan(numFrames,1);
         pupil.cutImplicitEllipseParams = nan(numFrames,6);
         pupil.cutExplicitEllipseParams= nan(numFrames,5);
         pupil.cutDistanceErrorMetric= nan(numFrames,1);
-
+        
         % pupil mask params
         pupilRange = params.pupilRange;
         pupil.circleRad = nan(numFrames,1);
         pupil.circleX = nan(numFrames,1);
         pupil.circleY = nan(numFrames,1);
         pupil.circleStrength = nan(numFrames,1);
-        
         % structuring element for pupil mask size
         sep = strel('rectangle',params.maskBox);
         
@@ -197,6 +207,7 @@ switch params.pupilFit
         pupil.flags.noGlint = nan(numFrames,1);
         pupil.flags.noPupil = nan(numFrames,1);
         pupil.flags.cutPupil = nan(numFrames,1);
+        pupil.flags.highCutError = nan(numFrames,1);
         
         % main glint params
         glint.X = nan(numFrames,1);
@@ -217,10 +228,7 @@ switch params.pupilFit
         
         % glint flags
         glint.flags.fittingFailure = nan(numFrames,1);
-        glint.flags.noGlint = nan(numFrames,1);
-        glint.flags.noPupil = nan(numFrames,1);
-        glint.flags.cutPupil = nan(numFrames,1);
-     
+        
 end
 
 %% Track
@@ -317,7 +325,7 @@ switch params.pupilFit
                         Ep = ellipse_im2ex(Epi);
                         
                         % get errorMetric
-                        [e,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                        [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
                         distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
                         
                         % store results
@@ -354,6 +362,8 @@ switch params.pupilFit
                     % track pupil and glint
                 case 0
                     if isempty(gCenters) && isempty(pCenters)
+                        pupil.flags.noPupil(i) = 1;
+                        pupil.flags.noGlint(i) = 1;
                         % save frame
                         if isfield(params,'outVideo')
                             frame   = getframe(ih);
@@ -362,6 +372,8 @@ switch params.pupilFit
                         if ~mod(i,10);progBar(i);end;
                         continue
                     elseif isempty(pCenters) && ~isempty(gCenters)
+                        pupil.flags.noPupil(i) = 1;
+                        pupil.flags.noGlint(i) = 0;
                         % circle params for glint
                         glint.circleStrength(i) = gMetric(1);
                         glint.circleRad(i) = gRadii(1);
@@ -376,6 +388,8 @@ switch params.pupilFit
                         continue
                         
                     elseif ~isempty(pCenters) && isempty(gCenters)
+                        pupil.flags.noPupil(i) = 0;
+                        pupil.flags.noGlint(i) = 1;
                         % circle params for pupil
                         pupil.circleStrength(i) = pMetric(1);
                         pupil.circleRad(i) = pRadii(1);
@@ -390,7 +404,10 @@ switch params.pupilFit
                         continue
                         
                     elseif ~isempty(pCenters) && ~isempty(gCenters)
-                        % First, track the glint
+                        pupil.flags.noPupil(i) = 0;
+                        pupil.flags.noGlint(i) = 0;
+                        
+                        % Track the glint
                         % getGlintPerimeter
                         [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
                         
@@ -401,7 +418,7 @@ switch params.pupilFit
                             Eg = ellipse_im2ex(Egi);
                             
                             % get errorMetric
-                            [eg,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
+                            [~,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
                             gdistanceErrorMetric = nanmedian(sqrt(sum(dg.^2)));
                         catch ME
                         end
@@ -410,6 +427,7 @@ switch params.pupilFit
                             glint.Y(i) = gCenters(1,2);
                             glint.size(i) = gRadii(1);
                             glint.circleStrength(i) = gMetric(1);
+                            glint.flags.fittingError(i) = ME;
                             clear ME
                         end
                         
@@ -436,31 +454,32 @@ switch params.pupilFit
                         end
                         
                         
-                        
+                        % Track the pupil
                         % get pupil perimeter
                         [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
+                        [Xp, Yp] = ind2sub(size(binP),find(binP));
+                        params.pixelsOnPerimeter(i) = length(Xp);
                         
-                        if params.cutPupil
-                            % cut the perimeter
-                            [Xp, Yp] = ind2sub(size(binP),find(binP));
-                            underGlint = find (Xp > gCenters(1,2) - 5 ); %% HARDCODED THRESHOLD HERE
-                            
+                        if params.cutEveryFrame % cut the perimeter for every frame, regardless of error.
+                            pupil.flags.cutPupil(i) = 1;
+                            underGlint = find (Xp > gCenters(1,2) - params.overGlintCut );
+                            params.cutPixels(i) = length(underGlint);
                             if ~isempty(underGlint)
                                 binPcut = zeros(size(I));
                                 binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-%                               imshow(binPcut)
+                                %                               imshow(binPcut)
                                 binP = binPcut;
+                                [Xp, Yp] = ind2sub(size(binP),find(binP));
                             end
                         end
                         
                         % Fit ellipse to pupil
-                        [Xp, Yp] = ind2sub(size(binP),find(binP));
                         try
                             Epi = ellipsefit_direct(Xp,Yp);
                             Ep = ellipse_im2ex(Epi);
                             
                             % get errorMetric
-                            [e,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                            [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
                             distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
                         catch ME
                         end
@@ -470,6 +489,7 @@ switch params.pupilFit
                             pupil.circleRad(i) = pRadii(1);
                             pupil.circleX(i) = pCenters(1,1);
                             pupil.circleY(i) = pCenters(1,2);
+                            pupil.flags.fittingError(i) = ME;
                             % save frame
                             if isfield(params,'outVideo')
                                 frame   = getframe(ih);
@@ -479,88 +499,188 @@ switch params.pupilFit
                             clear ME
                             continue
                         end
-                        % store results
-                        if exist ('Ep','var')
-                            if ~isempty(Ep) && isreal(Epi)
-                                pupil.X(i) = Ep(2);
-                                pupil.Y(i) = Ep(1);
-                                pupil.size(i) = Ep(3); % "radius"
-                                % ellipse params
-                                pupil.implicitEllipseParams(i,:) = Epi';
-                                pupil.explicitEllipseParams(i,:) = Ep';
-                                pupil.distanceErrorMetric(i) = distanceErrorMetric;
+                        
+                        % check the error of the fitting
+                        if params.cutEveryFrame
+                            % store results
+                            if exist ('Ep','var')
+                                if ~isempty(Ep) && isreal(Epi)
+                                    pupil.X(i) = Ep(2);
+                                    pupil.Y(i) = Ep(1);
+                                    pupil.size(i) = Ep(3); % "radius"
+                                    % ellipse params
+                                    pupil.cutImplicitEllipseParams(i,:) = Epi';
+                                    pupil.cutExplicitEllipseParams(i,:) = Ep';
+                                    pupil.cutDistanceErrorMetric(i) = distanceErrorMetric;
+                                    % circle params
+                                    pupil.circleStrength(i) = pMetric(1);
+                                    pupil.circleRad(i) = pRadii(1);
+                                    pupil.circleX(i) = pCenters(1,1);
+                                    pupil.circleY(i) = pCenters(1,2);
+                                end
+                                if distanceErrorMetric > params.fittingErrorThresh
+                                    pupil.flags.highCutError(i) = 1;
+                                else
+                                    pupil.flags.highCutError(i) = 0;
+                                end
+                            else
                                 % circle params
                                 pupil.circleStrength(i) = pMetric(1);
                                 pupil.circleRad(i) = pRadii(1);
                                 pupil.circleX(i) = pCenters(1,1);
                                 pupil.circleY(i) = pCenters(1,2);
-                            end
-                        else
-                            % circle params
-                            pupil.circleStrength(i) = pMetric(1);
-                            pupil.circleRad(i) = pRadii(1);
-                            pupil.circleX(i) = pCenters(1,1);
-                            pupil.circleY(i) = pCenters(1,2);
-                            % save frame
-                            if isfield(params,'outVideo')
-                                frame   = getframe(ih);
-                                writeVideo(outObj,frame);
-                            end
-                            if ~mod(i,10);progBar(i);end;
-                            continue
-                        end
-                        
-
-                        % plot results
-                        if ~isempty(Epi) && Ep(1) > 0
-%                             [Xp, Yp] = calcEllipse(Ep.Xc, Ep.Yc, Ep.longAx, Ep.shortAx, Ep.phi, 360);
-                            a = num2str(Epi(1)); 
-                            b = num2str(Epi(2));
-                            c = num2str(Epi(3));
-                            d = num2str(Epi(4));
-                            e = num2str(Epi(5));
-                            f = num2str(Epi(6));
-                            
-                            % note that X and Y indices need to be swapped!
-                            eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
-                            
-                            if isfield(params,'outVideo')
-                                hold on
-                                h= ezplot(eqt,[1, 240, 1, 320]);
-                                set (h, 'Color', 'Red')
-                                %                                 plot(Yp, Xp);
-                                if ~params.pupilOnly && ~isnan(glint.X(i))
-                                    hold on
-                                    plot(glint.X(i),glint.Y(i),'+b');
+                                % save frame
+                                if isfield(params,'outVideo')
+                                    frame   = getframe(ih);
+                                    writeVideo(outObj,frame);
                                 end
-                                hold off
+                                if ~mod(i,10);progBar(i);end;
+                                continue
+                            end
+                        elseif ~params.cutEveryFrame
+                            % store results
+                            if exist ('Ep','var')
+                                if ~isempty(Ep) && isreal(Epi)
+                                    pupil.X(i) = Ep(2);
+                                    pupil.Y(i) = Ep(1);
+                                    pupil.size(i) = Ep(3); % "radius"
+                                    % ellipse params
+                                    pupil.implicitEllipseParams(i,:) = Epi';
+                                    pupil.explicitEllipseParams(i,:) = Ep';
+                                    pupil.distanceErrorMetric(i) = distanceErrorMetric;
+                                    % circle params
+                                    pupil.circleStrength(i) = pMetric(1);
+                                    pupil.circleRad(i) = pRadii(1);
+                                    pupil.circleX(i) = pCenters(1,1);
+                                    pupil.circleY(i) = pCenters(1,2);
+                                end
+                                pupil.flags.cutPupil(i) = 0;
+                                pupil.flags.highCutError(i) = 0;
+                            else
+                                % circle params
+                                pupil.circleStrength(i) = pMetric(1);
+                                pupil.circleRad(i) = pRadii(1);
+                                pupil.circleX(i) = pCenters(1,1);
+                                pupil.circleY(i) = pCenters(1,2);
+                                % save frame
+                                if isfield(params,'outVideo')
+                                    frame   = getframe(ih);
+                                    writeVideo(outObj,frame);
+                                end
+                                if ~mod(i,10);progBar(i);end;
+                                continue
+                            end
+                            
+                            if distanceErrorMetric > params.fittingErrorThresh
+                                % clear previous ellipse variables
+                                clear Ep Epi Xp Yp
+                                % cut this frame
+                                pupil.flags.cutPupil(i) = 1;
+                                underGlint = find (Xp > gCenters(1,2) - params.overGlintCut );
+                                params.cutPixels(i) = length(underGlint);
+                                if ~isempty(underGlint)
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                    %                               imshow(binPcut)
+                                    binP = binPcut;
+                                    [Xp, Yp] = ind2sub(size(binP),find(binP));
+                                end
+                                
+                                % fit again
+                                try
+                                    Epi = ellipsefit_direct(Xp,Yp);
+                                    Ep = ellipse_im2ex(Epi);
+                                    
+                                    % get errorMetric
+                                    [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                                    cutdistanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
+                                catch ME
+                                end
+                                if  exist ('ME', 'var')
+                                    pupil.flags.fittingError(i) = ME;
+                                    % save frame
+                                    if isfield(params,'outVideo')
+                                        frame   = getframe(ih);
+                                        writeVideo(outObj,frame);
+                                    end
+                                    if ~mod(i,10);progBar(i);end;
+                                    clear ME
+                                    continue
+                                end
+                                % store results
+                                if exist ('Ep','var')
+                                    if ~isempty(Ep) && isreal(Epi)
+                                        pupil.X(i) = Ep(2);
+                                        pupil.Y(i) = Ep(1);
+                                        pupil.size(i) = Ep(3); % "radius"
+                                        % ellipse params
+                                        pupil.cutImplicitEllipseParams(i,:) = Epi';
+                                        pupil.cutExplicitEllipseParams(i,:) = Ep';
+                                        pupil.cutDistanceErrorMetric(i) = cutdistanceErrorMetric;
+                                    end
+                                    if cutdistanceErrorMetric > params.fittingErrorThresh
+                                        pupil.flags.highCutError(i) = 1;
+                                    else
+                                        pupil.flags.highCutError(i) = 0;
+                                    end
+                                end
+                            end
+                            
+                            % plot results
+                            if ~isempty(Epi) && Ep(1) > 0
+                                a = num2str(Epi(1));
+                                b = num2str(Epi(2));
+                                c = num2str(Epi(3));
+                                d = num2str(Epi(4));
+                                e = num2str(Epi(5));
+                                f = num2str(Epi(6));
+                                
+                                % note that X and Y indices need to be swapped!
+                                eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+                                
+                                if isfield(params,'outVideo')
+                                    hold on
+                                    h= ezplot(eqt,[1, 240, 1, 320]);
+                                    % set color according to type of tracking
+                                    if pupil.flags.cutPupil(i) == 0
+                                        set (h, 'Color', 'green')
+                                    elseif pupil.flags.cutPupil(i) == 1 && pupil.flags.highCutError(i) == 0
+                                        set (h, 'Color', 'yellow')
+                                    elseif pupil.flags.cutPupil(i) == 1 && pupil.flags.highCutError(i) == 1
+                                        set (h, 'Color', 'red')
+                                    end
+                                    if ~params.pupilOnly && ~isnan(glint.X(i))
+                                        hold on
+                                        plot(glint.X(i),glint.Y(i),'+b');
+                                    end
+                                    hold off
+                                end
                             end
                         end
                     end
+                    
+                    % save frame
+                    if isfield(params,'outVideo')
+                        frame   = getframe(ih);
+                        writeVideo(outObj,frame);
+                    end
+                    if ~mod(i,10);progBar(i);end;
+                    clear Eg Egi Ep Epi
             end
-            
-            % save frame
-            if isfield(params,'outVideo')
-                frame   = getframe(ih);
-                writeVideo(outObj,frame);
-            end
-            if ~mod(i,10);progBar(i);end;
-        clear Eg Egi Ep Epi
         end
-end
-% save full video
-if isfield(params,'outVideo')
-    close(ih);
-    close(outObj);
-end
-
-% save tracked values to output matrix
-if isfield(params,'outMat')
-    save(params.outMat,'pupil','glint');
-end
-
-
-
+        % save full video
+        if isfield(params,'outVideo')
+            close(ih);
+            close(outObj);
+        end
+        
+        % save tracked values to output matrix
+        if isfield(params,'outMat')
+            save(params.outMat,'pupil','glint');
+        end
+        
+        
+        
 end
 
 
