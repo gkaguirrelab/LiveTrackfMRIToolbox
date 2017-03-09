@@ -13,11 +13,11 @@ pI = imfilter(padP,h);
 pI = pI(size(I,1)/2+1:size(I,1)/2+size(I,1),size(I,2)/2+1:size(I,2)/2+size(I,2));
 % Binarize pupil
 binP = ones(size(pI));
-binP(pI<quantile(double(pI(:)),params.threshVals(1))) = 0;
+binP(pI<quantile(double(pI(:)),params.circleThresh(1))) = 0;
 
 % Filter for glint
 gI = ones(size(I));
-gI(I<quantile(double(pI(:)),params.threshVals(2))) = 0;
+gI(I<quantile(double(pI(:)),params.circleThresh(2))) = 0;
 padG = padarray(gI,[size(I,1)/2 size(I,2)/2], 0);
 h = fspecial('gaussian',[filtSize(1) filtSize(2)],filtSize(3));
 gI = imfilter(padG,h);
