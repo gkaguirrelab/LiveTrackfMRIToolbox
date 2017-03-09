@@ -8,7 +8,7 @@ function [pupil, glint, params] = trackPupil(params)
 % mask to the original video. A simple circular fit can be used for
 % tracking, but the resulting data appears noisier and generally less
 % accurate.
-%
+% 
 %   Usage:
 %       [pupil,glint,params]       = trackPupil(params)
 %
@@ -39,7 +39,7 @@ function [pupil, glint, params] = trackPupil(params)
 %       params.imageCrop    = [1 1 319 239] % used to crop the image
 %
 %       params.rangeAdjust  = 0.05;         % radius change (+/-) allowed from the previous frame for circular mask
-%       params.threshVals   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
+%       params.circleThresh   = [0.05 0.999]; % grayscale threshold values for pupil and glint, respectively
 %       params.pupilRange   = [10 70];      % initial pupil size range
 %       params.glintRange   = [10 30];      % constant glint size range
 %       params.glintOut     = 0.1;          % proportion outside of pupil glint is allowed to be. Higher = more outside
@@ -76,8 +76,8 @@ end
 if ~isfield(params,'rangeAdjust')
     params.rangeAdjust = 0.05;
 end
-if ~isfield(params,'threshVals')
-    params.threshVals = [0.06 0.999];
+if ~isfield(params,'circleThresh')
+    params.circleThresh = [0.06 0.999];
 end
 if ~isfield(params,'pupilRange')
     params.pupilRange   = [10 80];
@@ -105,7 +105,7 @@ if ~isfield(params,'maskBox')
 end
 
 %% Load video
-disp('Loading video file, may take a couple minutes...');
+disp('Loading video file...');
 inObj                   = VideoReader(params.inVideo);
 numFrames               = floor(inObj.Duration*inObj.FrameRate);
 % option to overwrite numFrames (for quick testing)
@@ -116,6 +116,7 @@ end
 % initialize gray image array
 grayI                   = zeros([240 320 numFrames],'uint8');
 
+disp('Converting video to standard format, may take a while...');
 % Convert to gray, resize, crop to livetrack size
 for i = 1:numFrames
     thisFrame           = readFrame(inObj);
@@ -134,6 +135,16 @@ end
 clear RGB inObj
 
 %% Initialize pupil and glint structures
+% display main tracking parameters
+disp('Starting tracking with the following parameters:');
+disp('Track pupil only: ')
+disp(params.pupilOnly)
+disp('Fit method: ') 
+disp(params.pupilFit)
+disp('Circle threshold: ')
+disp(params.circleThresh)
+disp('Ellipse threshold: ')
+disp(params.ellipseThresh)
 
 switch params.pupilFit
     case 'circle'
@@ -154,26 +165,7 @@ switch params.pupilFit
         glint.size = nan(numFrames,1);
         glint.circleStrength = nan(numFrames,1);
         
-        
-    case 'oldEllipse'
-        pupilRange = params.pupilRange;
-        glintRange = params.glintRange;
-        pupil.X = nan(numFrames,1);
-        pupil.Y = nan(numFrames,1);
-        pupil.size = nan(numFrames,1);
-        pupil.circleStrength = nan(numFrames,1);
-        pupil.ellipse = nan(numFrames,1);
-        glint.X = nan(numFrames,1);
-        glint.Y = nan(numFrames,1);
-        glint.size = nan(numFrames,1);
-        glint.circleStrength = nan(numFrames,1);
-        glint.ellipse = nan(numFrames,1);
-        
-        
-        % structuring element for mask size
-        sep = strel('rectangle',params.maskBox);
-        
-    case 'newEllipse'
+    case 'ellipse'
         pupilRange = params.pupilRange;
         glintRange = params.glintRange;
         pupil.X = nan(numFrames,1);
@@ -264,192 +256,7 @@ switch params.pupilFit
             if ~mod(i,10);progBar(i);end;
         end
         
-    case 'oldEllipse'
-        for i = 1:numFrames
-            % Get the frame
-            I = squeeze(grayI(:,:,i));
-            
-            % Show the frame
-            if isfield(params,'outVideo')
-                imshow(I);
-            end
-            
-            % track with circles
-            [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
-            
-            switch params.pupilOnly
-                
-                % track pupil only
-                case 1
-                    if isempty(pCenters)
-                        % save frame
-                        if isfield(params,'outVideo')
-                            frame   = getframe(ih);
-                            writeVideo(outObj,frame);
-                        end
-                        if ~mod(i,10);progBar(i);end;
-                        continue
-                    else
-                        % get pupil perimeter
-                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
-                        
-                        % Fit ellipse to pupil
-                        [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        Ep = fit_ellipse(Xp,Yp);
-                        
-                        % store results
-                        if ~isempty(Ep) && isempty (Ep.status)
-                            pupil.X(i) = Ep.Y0_in;
-                            pupil.Y(i) = Ep.X0_in;
-                            pupil.size(i) = Ep.long_axis /2; % "radius"
-                            % ellipse params
-                            pupil.ellipseParams(i) = Ep';
-                            % circle params
-                            pupil.circleStrength(i) = pMetric(1);
-                            pupil.circleRad(i) = pRadii(1);
-                            pupil.circleX(i) = pCenters(1,1);
-                            pupil.circleY(i) = pCenters(1,2);
-                        else
-                            % circle params
-                            pupil.circleStrength(i) = pMetric(1);
-                            pupil.circleRad(i) = pRadii(1);
-                            pupil.circleX(i) = pCenters(1,1);
-                            pupil.circleY(i) = pCenters(1,2);
-                            
-                            % save frame
-                            if isfield(params,'outVideo')
-                                frame   = getframe(ih);
-                                writeVideo(outObj,frame);
-                            end
-                            if ~mod(i,10);progBar(i);end;
-                            continue
-                        end
-                    end
-                    
-                    % track pupil and glint
-                case 0
-                    if isempty(gCenters) && isempty(pCenters)
-                        % save frame
-                        if isfield(params,'outVideo')
-                            frame   = getframe(ih);
-                            writeVideo(outObj,frame);
-                        end
-                        if ~mod(i,10);progBar(i);end;
-                        continue
-                    elseif isempty(pCenters) && ~isempty(gCenters)
-                        % circle params for glint
-                        glint.circleStrength(i) = gMetric(1);
-                        glint.circleRad(i) = gRadii(1);
-                        glint.circleX(i) = gCenters(1,1);
-                        glint.circleY(i) = gCenters(1,2);
-                        % save frame
-                        if isfield(params,'outVideo')
-                            frame   = getframe(ih);
-                            writeVideo(outObj,frame);
-                        end
-                        if ~mod(i,10);progBar(i);end;
-                        continue
-                        
-                    elseif ~isempty(pCenters) && isempty(gCenters)
-                        % circle params for pupil
-                        pupil.circleStrength(i) = pMetric(1);
-                        pupil.circleRad(i) = pRadii(1);
-                        pupil.circleX(i) = pCenters(1,1);
-                        pupil.circleY(i) = pCenters(1,2);
-                        % save frame
-                        if isfield(params,'outVideo')
-                            frame   = getframe(ih);
-                            writeVideo(outObj,frame);
-                        end
-                        if ~mod(i,10);progBar(i);end;
-                        continue
-                        
-                    elseif ~isempty(pCenters) && ~isempty(gCenters)
-                        
-                        % get pupil perimeter
-                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
-                        
-                        % Fit ellipse to pupil
-                        [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        Ep = fit_ellipse(Xp,Yp);
-                        
-                        % store results
-                        if ~isempty(Ep) && isempty (Ep.status)
-                            pupil.X(i) = Ep.Y0_in;
-                            pupil.Y(i) = Ep.X0_in;
-                            pupil.size(i) = Ep.long_axis /2; % "radius"
-                            % ellipse params
-                            pupil.ellipseParams(i) = Ep';
-                            % circle params
-                            pupil.circleStrength(i) = pMetric(1);
-                            pupil.circleRad(i) = pRadii(1);
-                            pupil.circleX(i) = pCenters(1,1);
-                            pupil.circleY(i) = pCenters(1,2);
-                        else
-                            % circle params
-                            pupil.circleStrength(i) = pMetric(1);
-                            pupil.circleRad(i) = pRadii(1);
-                            pupil.circleX(i) = pCenters(1,1);
-                            pupil.circleY(i) = pCenters(1,2);
-                            % save frame
-                            if isfield(params,'outVideo')
-                                frame   = getframe(ih);
-                                writeVideo(outObj,frame);
-                            end
-                            if ~mod(i,10);progBar(i);end;
-                            continue
-                        end
-                        
-                        % track the glint
-                        % get glint perimeter
-                        [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
-                        
-                        % Fit ellipse to glint
-                        [Xg, Yg] = ind2sub(size(binG),find(binG));
-                        Eg = fit_ellipse(Xg,Yg);
-                        
-                        % store results
-                        if ~isempty (Eg) && isempty (Eg.status)
-                            glint.X(i) = Eg.Y0_in;
-                            glint.Y(i) = Eg.X0_in;
-                            glint.circleStrength(i) = gMetric(1);
-                            glint.ellipseParams(i) = Eg';
-                            % circle params for glint
-                            glint.circleStrength(i) = gMetric(1);
-                            glint.circleRad(i) = gRadii(1);
-                            glint.circleX(i) = gCenters(1,1);
-                            glint.circleY(i) = gCenters(1,2);
-                        else
-                            glint.X(i)= gCenters(1,1);
-                            glint.Y(i) = gCenters(1,2);
-                            glint.size(i) = gRadii(1);
-                            glint.circleStrength(i) = gMetric(1);
-                        end
-                        % plot results
-                        if ~isempty(Ep) && isempty (Ep.status) && Ep.X0_in > 0
-                            [Xp, Yp] = calcEllipse(Ep, 360);
-                            if isfield(params,'outVideo')
-                                hold on
-                                plot(Yp, Xp);
-                                if ~params.pupilOnly && ~isnan(glint.X(i))
-                                    hold on
-                                    plot(glint.X(i),glint.Y(i),'+b');
-                                end
-                                hold off
-                            end
-                        end
-                    end
-            end
-            
-            % save frame
-            if isfield(params,'outVideo')
-                frame   = getframe(ih);
-                writeVideo(outObj,frame);
-            end
-            if ~mod(i,10);progBar(i);end;
-        end
-        
-    case 'newEllipse'
+    case 'ellipse'
         for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
