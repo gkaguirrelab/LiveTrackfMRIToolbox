@@ -427,7 +427,7 @@ switch params.pupilFit
                             glint.Y(i) = gCenters(1,2);
                             glint.size(i) = gRadii(1);
                             glint.circleStrength(i) = gMetric(1);
-                            glint.flags.fittingError(i) = ME;
+                            glint.flags.fittingError(i) = 1;
                             clear ME
                         end
                         
@@ -489,7 +489,7 @@ switch params.pupilFit
                             pupil.circleRad(i) = pRadii(1);
                             pupil.circleX(i) = pCenters(1,1);
                             pupil.circleY(i) = pCenters(1,2);
-                            pupil.flags.fittingError(i) = ME;
+                            pupil.flags.fittingError(i) = 1;
                             % save frame
                             if isfield(params,'outVideo')
                                 frame   = getframe(ih);
@@ -573,7 +573,7 @@ switch params.pupilFit
                             
                             if distanceErrorMetric > params.fittingErrorThresh
                                 % clear previous ellipse variables
-                                clear Ep Epi Xp Yp
+                                clear Ep Epi
                                 % cut this frame
                                 pupil.flags.cutPupil(i) = 1;
                                 underGlint = find (Xp > gCenters(1,2) - params.overGlintCut );
@@ -597,7 +597,7 @@ switch params.pupilFit
                                 catch ME
                                 end
                                 if  exist ('ME', 'var')
-                                    pupil.flags.fittingError(i) = ME;
+                                    pupil.flags.fittingError(i) = 1;
                                     % save frame
                                     if isfield(params,'outVideo')
                                         frame   = getframe(ih);
