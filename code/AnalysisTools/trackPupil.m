@@ -146,6 +146,7 @@ disp(params.circleThresh)
 disp('Ellipse threshold: ')
 disp(params.ellipseThresh)
 
+% initialize
 switch params.pupilFit
     case 'circle'
         % Useful:
@@ -166,35 +167,48 @@ switch params.pupilFit
         glint.circleStrength = nan(numFrames,1);
         
     case 'ellipse'
-        pupilRange = params.pupilRange;
-        glintRange = params.glintRange;
+        % main pupil params
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
         pupil.size = nan(numFrames,1);
+        
+        % full fit params
         pupil.implicitEllipseParams = nan(numFrames,6);
         pupil.explicitEllipseParams= nan(numFrames,5);
         pupil.distanceErrorMetric= nan(numFrames,1);
+        
+        % cut fit params
+        pupil.cutImplicitEllipseParams = nan(numFrames,6);
+        pupil.cutExplicitEllipseParams= nan(numFrames,5);
+        pupil.cutDistanceErrorMetric= nan(numFrames,1);
+
+        % pupil mask params
+        pupilRange = params.pupilRange;
         pupil.circleRad = nan(numFrames,1);
         pupil.circleX = nan(numFrames,1);
         pupil.circleY = nan(numFrames,1);
         pupil.circleStrength = nan(numFrames,1);
         
+        % structuring element for pupil mask size
+        sep = strel('rectangle',params.maskBox);
+        
+        % main glint params
         glint.X = nan(numFrames,1);
         glint.Y = nan(numFrames,1);
         glint.size = nan(numFrames,1);
+        
+        % glint fit params
         glint.implicitEllipseParams = nan(numFrames,6);
         glint.explicitEllipseParams= nan(numFrames,5);
         glint.distanceErrorMetric= nan(numFrames,1);
+        
+        % glint mask params
+        glintRange = params.glintRange;
         glint.circleRad = nan(numFrames,1);
         glint.circleX = nan(numFrames,1);
         glint.circleY = nan(numFrames,1);
         glint.circleStrength = nan(numFrames,1);
-
-        
-        
-        % structuring element for mask size
-        sep = strel('rectangle',params.maskBox);
-        
+     
 end
 
 %% Track
@@ -208,7 +222,7 @@ switch params.pupilFit
     case 'circle'
         for i = 1:numFrames
             % Get the frame
-            I                   = squeeze(grayI(:,:,i));
+            I = squeeze(grayI(:,:,i));
             % Show the frame
             if isfield(params,'outVideo')
                 imshow(I);
