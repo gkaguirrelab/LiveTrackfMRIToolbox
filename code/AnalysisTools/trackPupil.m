@@ -80,7 +80,7 @@ if ~isfield(params,'circleThresh')
     params.circleThresh = [0.06 0.999];
 end
 if ~isfield(params,'pupilRange')
-    params.pupilRange   = [10 80];
+    params.pupilRange   = [20 90];
 end
 if ~isfield(params,'glintRange')
     params.glintRange   = [10 30];
@@ -101,7 +101,7 @@ if ~isfield(params,'ellipseThresh')
     params.ellipseThresh   = [0.97 0.9];
 end
 if ~isfield(params,'maskBox')
-    params.maskBox   = [4 8];
+    params.maskBox   = [4 30];
 end
 if ~isfield(params,'overGlintCut')
     params.overGlintCut = 5;
