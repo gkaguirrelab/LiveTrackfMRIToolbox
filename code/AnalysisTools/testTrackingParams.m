@@ -3,6 +3,9 @@
 % this script is to test tracking params. It will perform the tracking on
 % the first 3000 frames of a video.
 
+close all
+clear
+clc
 %% paths
 % Set Dropbox directory
 %get hostname (for melchior's special dropbox folder settings)
@@ -25,16 +28,20 @@ params.eyeTrackingDir = 'EyeTracking';
 params.analysisDir = 'TOME_analysis';
 
 % subject
-params.projectSubfolder = 'session2_spatialStimuli';
-params.subjectName = 'TOME_3014';
-params.sessionDate = '021717';
+params.subjectName = 'TOME_3011';
+params.sessionDate = '111116';
 
+% session
+params.projectSubfolder = 'session1_restAndStructure';
+% params.projectSubfolder = 'session2_spatialStimuli';
 
 % run
-params.runName = 'tfMRI_FLASH_AP_run01';
+params.runName = 'rfMRI_REST_AP_run03';
+
+% params.runName = 'tfMRI_FLASH_PA_run02';
 
 % calibration
-calName = 'GazeCal01_LTcal.mat';
+% calName = 'GazeCal01_LTcal.mat';
 
 % file Names
 reportName = [params.runName '_report.mat'];
@@ -49,17 +56,18 @@ processingDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,pa
 %% params for tracking
 outDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
 params.acqRate = 60;
-params.pupilFit = 'newEllipse';
+params.pupilFit = 'ellipse';
 % params.pupilFit = 'circle';
 params.inVideo = fullfile(outDir,[params.runName '_60hz.avi']);
-params.outVideo = fullfile(outDir,[params.runName '_fullEllipse.avi']);
-params.outMat = fullfile(outDir, [params.runName '_fullEllipse.mat']);
-params.ellipseThresh   = [0.963 0.9];
-params.threshVals = [0.06 0.999];
+params.outVideo = fullfile(outDir,[params.runName '_testTracking.avi']);
+params.outMat = fullfile(outDir, [params.runName '_testTracking.mat']);
+params.ellipseThresh   = [0.95 0.9];
+params.circleThresh = [0.048 0.999];
+
 params.cutPupil = 0;
 
 
-params.forceNumFrames = 4000;
+params.forceNumFrames = 500;
 % [pupil , iris, eyelid] = irisFit (params);
 trackPupil(params);
 
