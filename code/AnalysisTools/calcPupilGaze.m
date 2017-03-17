@@ -1,4 +1,4 @@
-function [pupilSize,gaze] = calcPupilGaze(params)
+function [pupilSize,gaze, pupilError,pupilCut] = calcPupilGaze(params)
 
 % Calculates the pupil size and gaze position from eye tracking data
 %
@@ -269,6 +269,20 @@ switch params.trackType
 end
 eyeGaze                         = calcGaze(eyeParams);
 %% Set outputs
+
 % pupilSize                       = eyePupil.size * mmPerPixel;
 pupilSize                       = eyePupil.size ./ pxPerMm;
 gaze                            = eyeGaze;
+
+% also, save out the errorMetric for the pupil
+pupilError = nan(length(eyeMat.pupil.X),1);
+pupilCut = nan(length(eyeMat.pupil.X),1);
+for ii = 1:length(eyeMat.pupil.X)
+    if eyeMat.pupil.flags.cutPupil(ii) == 1
+        pupilError(ii) = eyeMat.pupil.cutDistanceErrorMetric(ii);
+        pupilCut(ii) = 1;
+    else
+        pupilError(ii) = eyeMat.pupil.distanceErrorMetric(ii);
+        pupilCut(ii) = 0;
+    end
+end

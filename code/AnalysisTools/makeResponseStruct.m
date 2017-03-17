@@ -58,7 +58,7 @@ switch params.trackType
             end
         end
         
-        [pupilSize,gaze] = calcPupilGaze(calParams);
+        [pupilSize,gaze,pupilError,pupilCut] = calcPupilGaze(calParams);
         
         % load timeBase file
         timeBaseFile = fullfile(dropboxDir,'TOME_processing',runParams.projectSubfolder,...
@@ -73,6 +73,8 @@ switch params.trackType
         end
         
         % assemble response struct values
+        response.pupilError = pupilError';
+        response.pupilCut = pupilCut';
         response.pupilSize = pupilSize';
         response.gazeEcc = gaze.ecc;
         response.gazePol = gaze.pol;
