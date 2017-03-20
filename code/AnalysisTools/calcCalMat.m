@@ -24,13 +24,21 @@ function [calMat] = calcCalMat(params)
 %
 %   Written by Andrew S Bock Oct 2016
 
-%% initialize the matrx
+%% initialize the matrix
 X = [...
     1 0 0 0 ...
     0 1 0 0 ...
     0 0 0 0 ...
     0 0 0 1 ...
     ];
+
+%% exclude nan targets
+params.pupil.X = params.pupil.X(~isnan(params.targets.X));
+params.pupil.Y = params.pupil.Y(~isnan(params.targets.X));
+params.glint.X = params.glint.X(~isnan(params.targets.X));
+params.glint.Y = params.glint.Y(~isnan(params.targets.X));
+params.targets.X = params.targets.X(~isnan(params.targets.X));
+params.targets.Y = params.targets.Y (~isnan(params.targets.X));
 %% Loop through calls to fminsearch, changing tolerance
 for i=1:20
     options = optimset('Display','off','MaxFunEvals', 10000,...
@@ -63,6 +71,6 @@ for i = 1:length(targets.X)
     oXYZW = [x; y; z; 1];
     
     errXYZ = (aXYZW(1:3)/aXYZW(4)) - (oXYZW(1:3)/oXYZW(4));
-    err(i) = sum(errXYZ.^2);
+    err(i) = nansum(errXYZ.^2);
 end
-errtot = sum(err.^2);
+errtot = nansum(err.^2);

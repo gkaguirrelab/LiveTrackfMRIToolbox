@@ -206,10 +206,19 @@ switch params.trackType
             plot(calGaze.X(i),calGaze.Y(i),'bx');
             plot([targets(i,1) calGaze.X(i)], [targets(i,2) calGaze.Y(i)],'g');
         end
-    case {'LiveTrack','Hybrid'}
+    case {'LiveTrack'}
         gazeCal                 = load(params.gazeCalFile);
         calParams.rpc           = gazeCal.Rpc;
         calParams.calMat        = gazeCal.CalMat;
+    case {'Hybrid'}
+        gazeCal                 = load(params.gazeCalFile);
+        if isfield(gazeCal, 'calParams')
+        calParams.rpc           = gazeCal.calParams.rpc;
+        calParams.calMat        = gazeCal.calParams.calMat;
+        else
+        calParams.rpc           = gazeCal.Rpc;
+        calParams.calMat        = gazeCal.CalMat;
+        end
 end
 %% Get the pupil size and gaze location from an eye tracking video
 switch params.trackType
