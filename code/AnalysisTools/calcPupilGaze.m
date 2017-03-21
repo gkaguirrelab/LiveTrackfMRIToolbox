@@ -21,12 +21,12 @@ function [pupilSize,gaze, pupilError,pupilCut] = calcPupilGaze(params)
 %           params.eyeTrackVideo    - full path to eye tracking .avi video file
 %
 %       Optional inputs:
-%           params.scaleCalOutVideo - full path to output scale calibration video 
-%           params.scaleCalOutMat   - full path to output scale calibration .mat file 
-%           params.gazeCalOutVideo  - full path to output gaze calibration video 
-%           params.gazeCalOutMat    - full path to output gaze calibration .mat file 
-%           params.eyeTrackOutVideo - full path to output eye tracking video 
-%           params.eyeTrackOutMat   - full path to output eye tracking .mat file 
+%           params.scaleCalOutVideo - full path to output scale calibration video
+%           params.scaleCalOutMat   - full path to output scale calibration .mat file
+%           params.gazeCalOutVideo  - full path to output gaze calibration video
+%           params.gazeCalOutMat    - full path to output gaze calibration .mat file
+%           params.eyeTrackOutVideo - full path to output eye tracking video
+%           params.eyeTrackOutMat   - full path to output eye tracking .mat file
 %
 %   Defaults:
 %       params.scaleSize        - 5;        % calibration dot size (mm)
@@ -48,15 +48,15 @@ function [pupilSize,gaze, pupilError,pupilCut] = calcPupilGaze(params)
 %           value to the pupil and glint no matter what
 %
 %       If params.trackType == 'trackPupil'
-%           nans in the output data indicate a blink, or really any event 
-%           where both the pupil and glint could not be simultaneously 
+%           nans in the output data indicate a blink, or really any event
+%           where both the pupil and glint could not be simultaneously
 %           tracked
 %
 %       If params.trackType == 'Hybrid'
 %           The input is a "rescaled" version of tracked data obtained with
 %           track pupil, that will be processed as if they were LiveTrack
-%           data. 
-% 
+%           data.
+%
 %   Written by Andrew S Bock Oct 2016
 
 %% set defaults
@@ -87,11 +87,21 @@ switch params.trackType
         scaleParams.pupilOnly   = 1;
         [scalePupil]            = trackPupil(scaleParams);
         mmPerPixel              = params.scaleSize / median(scalePupil.size);
-    case {'LiveTrack','Hybrid'}
+    case 'LiveTrack'
         scaleCal                = load(params.scaleCalFile);
         [maxVal,maxInd]         = max(scaleCal.ScaleCal.pupilDiameterMmGroundTruth);
         mmPerPixel              = maxVal / median([scaleCal.ScaleCal.ReportRaw{maxInd}.PupilWidth_Ch01]);
         pxPerMm = scaleCal.ScaleCal.cameraUnitsToMmWidthMean;
+    case 'Hybrid'
+        if isfield(params, 'sizeConversionFactor')
+            pxPerMm = params.sizeConversionFactor.sizeConversionFactor;
+        else % just use livetrack data
+            scaleCal                = load(params.scaleCalFile);
+            [maxVal,maxInd]         = max(scaleCal.ScaleCal.pupilDiameterMmGroundTruth);
+            mmPerPixel              = maxVal / median([scaleCal.ScaleCal.ReportRaw{maxInd}.PupilWidth_Ch01]);
+            pxPerMm = scaleCal.ScaleCal.cameraUnitsToMmWidthMean;
+        end
+        
 end
 %% Get the transformation matrix for gaze
 switch params.trackType
@@ -213,11 +223,11 @@ switch params.trackType
     case {'Hybrid'}
         gazeCal                 = load(params.gazeCalFile);
         if isfield(gazeCal, 'calParams')
-        calParams.rpc           = gazeCal.calParams.rpc;
-        calParams.calMat        = gazeCal.calParams.calMat;
+            calParams.rpc           = gazeCal.calParams.rpc;
+            calParams.calMat        = gazeCal.calParams.calMat;
         else
-        calParams.rpc           = gazeCal.Rpc;
-        calParams.calMat        = gazeCal.CalMat;
+            calParams.rpc           = gazeCal.Rpc;
+            calParams.calMat        = gazeCal.CalMat;
         end
 end
 %% Get the pupil size and gaze location from an eye tracking video
@@ -271,7 +281,7 @@ switch params.trackType
         eyeParams.pupil.X       = eyeMat.pupil.X;
         eyeParams.pupil.Y       = eyeMat.pupil.Y;
         eyeParams.glint.X       = eyeMat.glint.X;
-        eyeParams.glint.Y       = eyeMat.glint.Y; 
+        eyeParams.glint.Y       = eyeMat.glint.Y;
         eyeParams.viewDist      = params.viewDist;
         eyeParams.rpc           = calParams.rpc;
         eyeParams.calMat        = calParams.calMat;

@@ -67,6 +67,14 @@ switch params.trackType
             calParams.gazeCalFile = (fullfile (betterCal.folder, betterCal.name));
             runParams.gazeCalName = betterCal.name;
         end
+        % if exists a size conversion factor file in TOME_processing, load
+        % that instead
+        sizeCal = dir(fullfile(dropboxDir, 'TOME_processing', params.projectSubfolder, ...
+            params.subjectName,params.sessionDate,params.eyeTrackingDir, 'sizeConversionFactor.mat'));
+        if ~isempty (sizeCal)
+            calParams.sizeConversionFactor = load(fullfile(sizeCal.folder, sizeCal.name));
+        end
+            
         
         
         [pupilSize,gaze,pupilError,pupilCut] = calcPupilGaze(calParams);
