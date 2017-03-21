@@ -1,4 +1,4 @@
-function sizeConversionFactor = sizeCalibration(params)
+function sizeConversionFactor = sizeCalibration(dropboxDir,params)
 
 %% load files
 scaleCalFile = dir(fullfile(dropboxDir, params.projectFolder, params.projectSubfolder, ...
@@ -17,7 +17,7 @@ if isempty(rawVids)
 end
 
 
-%% track
+%% track and get conversion factor
 if ~isempty(rawVids)
     for rr = 1: length(rawVids)
         fprintf ('\nProcessing calibration %d of %d\n',rr,length(rawVids))
@@ -35,10 +35,15 @@ if ~isempty(rawVids)
         params.cutPupil = 1;
         [dotsPX(rr), ~, ~] = trackPupil(params);
     end
+    diameters = fliplr(LT.ScaleCal.pupilDiameterMmGroundTruth);
+    for rr = 1: length(rawVids)
+        PXperMM(rr) = nanmedian(dotsPX(rr).size) / diameters(rr);
+    end
+    sizeConversionFactor = median(PXperMM);
 else
     % if no raw videos were acquired (early scans), track the livetrack videos
-    for rr = 1: length(LTids)
-        fprintf ('\nProcessing calibration %d of %d\n',rr,length(LTids))
+    for rr = 1: length(LTvids)
+        fprintf ('\nProcessing calibration %d of %d\n',rr,length(LTvids))
         %get the run name
         params.calName = LTvids(rr).name(1:end-4); %runs
         outDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
@@ -46,23 +51,23 @@ else
         params.pupilFit = 'ellipse';
         params.ellipseThresh   = [0.94 0.9];
         params.circleThresh = [0.05 0.999];
-        params.inVideo = fullfile(outDir,[params.calName '_60hz.avi']);
+        params.inVideo = fullfile(LTvids(rr).folder, LTvids(rr).name);
         params.outVideo = fullfile(outDir,[params.calName '_calTrack.avi']);
         params.outMat = fullfile(outDir, [params.calName '_calTrack.mat']);
         params.pupilOnly = 1;
         params.cutPupil = 1;
+        params.keepOriginalSize = 1;
         [dotsPX(rr), ~, ~] = trackPupil(params);
     end
-end
+    diameters = fliplr(LT.ScaleCal.pupilDiameterMmGroundTruth);
+    for rr = 1: length(LTvids)
+        PXperMM(rr) = nanmedian(dotsPX(rr).size) / diameters(rr);
+    end
+   sizeConversionFactor = median(PXperMM);
+end % track
 
-%% get the pixels per mm
-diameters = fliplr(LT.ScaleCal.pupilDiameterMmGroundTruth);
 
-for rr = 1: length(rawVids)
-    PXperMM(rr) = median(dotsPX(rr).size) / diameters(rr);
-end
 
-sizeConversionFactor = median(PXperMM);
 
 %% save out size conversion factor as a mat file
- save (fullfile(outDir, 'sizeConversionFactor.mat'), 'sizeConversionFactor')
+save (fullfile(outDir, 'sizeConversionFactor.mat'), 'sizeConversionFactor')
