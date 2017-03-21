@@ -342,6 +342,33 @@ switch params.pupilFit
                             pupil.circleRad(i) = pRadii(1);
                             pupil.circleX(i) = pCenters(1,1);
                             pupil.circleY(i) = pCenters(1,2);
+                            
+                            % plot results
+                             if ~isempty(Epi) && Ep(1) > 0
+                                a = num2str(Epi(1));
+                                b = num2str(Epi(2));
+                                c = num2str(Epi(3));
+                                d = num2str(Epi(4));
+                                e = num2str(Epi(5));
+                                f = num2str(Epi(6));
+                                
+                                % note that X and Y indices need to be swapped!
+                                eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+                                
+                                if isfield(params,'outVideo')
+                                    hold on
+                                    h= ezplot(eqt,[1, 240, 1, 320]);
+                                    % set color according to type of tracking
+                                    set (h, 'Color', 'green')
+                                    hold off
+                                end
+                            end % plot results
+                             % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
                         else
                             % circle params
                             pupil.circleStrength(i) = pMetric(1);
@@ -655,7 +682,7 @@ switch params.pupilFit
                                     end
                                     hold off
                                 end
-                            end
+                            end % plot results
                         end
                     end
                     
