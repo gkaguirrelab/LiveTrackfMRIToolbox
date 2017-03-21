@@ -65,6 +65,9 @@ if ~isfield(params,'pupilOnly')
 end
 
 % params for image resizing and cropping
+if ~isfield (params, 'keepOriginalSize')
+    params.keepOriginalSize = 0;
+end
 if ~isfield(params,'imageSize')
     params.imageSize = [486 720]/2;
 end
@@ -130,10 +133,13 @@ disp('Converting video to standard format, may take a while...');
 for i = 1:numFrames
     thisFrame           = readFrame(inObj);
     tmp                 = rgb2gray(thisFrame);
-    tmp2        = imresize(tmp,params.imageSize);
-    tmp3 = imcrop(tmp2,params.imageCrop);
-    grayI(:,:,i) = tmp3;
+    if params.keepOriginalSize == 0
+        tmp2 = imresize(tmp,params.imageSize);
+        tmp = imcrop(tmp2,params.imageCrop);
+    end
+    grayI(:,:,i) = tmp;
 end
+
 
 if isfield(params,'outVideo')
     outObj              = VideoWriter(params.outVideo);
