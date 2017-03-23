@@ -324,16 +324,28 @@ switch params.pupilFit
                     else
                         % get pupil perimeter
                         [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
-                        
-                        % Fit ellipse to pupil
-                        [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        Epi = ellipsefit_direct(Xp,Yp);
-                        Ep = ellipse_im2ex(Epi);
-                        
-                        % get errorMetric
-                        [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
-                        distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
-                        
+                        try
+                            % Fit ellipse to pupil
+                            [Xp, Yp] = ind2sub(size(binP),find(binP));
+                            Epi = ellipsefit_direct(Xp,Yp);
+                            Ep = ellipse_im2ex(Epi);
+                            
+                            % get errorMetric
+                            [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                            distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
+                        catch ME
+                        end
+                        if  exist ('ME', 'var')
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            clear ME
+                            continue
+                        end
+                            
                         % store results
                         if ~isempty(Ep)
                             pupil.X(i) = Ep(2);
