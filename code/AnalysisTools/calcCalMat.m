@@ -42,12 +42,21 @@ params.targets.Y = params.targets.Y (~isnan(params.targets.X));
 %% Loop through calls to fminsearch, changing tolerance
 for i=1:20
     options = optimset('Display','off','MaxFunEvals', 10000,...
-        'MaxIter', 10000, 'TolX',10^(-i/2),'TolFun',10^(-i/2));
+        'MaxIter', 10000, 'TolX',10^(-i/2),'TolFun',10^(-i/2),'PlotFcns',[] );
     [X, f] = fminsearch(@(param) ...
         errfun(param,params.pupil,params.glint,params.targets,params.viewDist,params.rpc),...
         X, options);
     disp(['RSS error: ',num2str(f)])
 end
+% %% Loop through calls to fminunc, changing tolerance
+% for i=1:30
+%     options = optimoptions('fminunc', 'Algorithm','trust-region','Display','off', 'MaxFunctionEvaluations', 50000,...
+%         'MaxIterations', 50000, 'OptimalityTolerance',10^(-i/2),'StepTolerance', 10^(-i/2),'PlotFcns',[] );
+%     [X, f] = fminunc(@(param) ...
+%         errfun(param,params.pupil,params.glint,params.targets,params.viewDist,params.rpc),...
+%         X, options);
+%     disp(['RSS error: ',num2str(f)])
+% end
 %% make the calibration matrix
 calMat = [X(1:4); X(5:8); X(9:12); X(13:16)];
 

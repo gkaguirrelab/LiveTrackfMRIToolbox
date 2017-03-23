@@ -49,7 +49,7 @@ else
         outDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
         params.acqRate = 10;
         params.pupilFit = 'ellipse';
-        params.ellipseThresh   = [0.94 0.9];
+        params.ellipseThresh   = [0.97 0.9];
         params.circleThresh = [0.05 0.999];
         params.inVideo = fullfile(LTvids(rr).folder, LTvids(rr).name);
         params.outVideo = fullfile(outDir,[params.calName '_calTrack.avi']);
