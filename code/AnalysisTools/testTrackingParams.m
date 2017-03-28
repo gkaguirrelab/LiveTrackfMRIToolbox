@@ -28,17 +28,17 @@ params.eyeTrackingDir = 'EyeTracking';
 params.analysisDir = 'TOME_analysis';
 
 % subject
-params.subjectName = 'TOME_3011';
-params.sessionDate = '111116';
+params.subjectName = 'TOME_3005';
+params.sessionDate = '092316';
 
 % session
 params.projectSubfolder = 'session1_restAndStructure';
 % params.projectSubfolder = 'session2_spatialStimuli';
 
 % run
-params.runName = 'rfMRI_REST_AP_run03';
+params.runName = 'rfMRI_REST_AP_run01';
 
-% params.runName = 'tfMRI_FLASH_PA_run02';
+% params.runName = 'tfMRI_RETINO_PA_run01';
 
 % calibration
 % calName = 'GazeCal01_LTcal.mat';
@@ -59,10 +59,10 @@ params.acqRate = 60;
 params.pupilFit = 'bestPupilFit';
 % params.pupilFit = 'circle';
 params.inVideo = fullfile(outDir,[params.runName '_60hz.avi']);
-params.outVideo = fullfile(outDir,[params.runName '_testTracking.avi']);
-params.outMat = fullfile(outDir, [params.runName '_testTracking.mat']);
-params.ellipseThresh   = [0.95 0.9];
-params.circleThresh = [0.048 0.999];
+params.outVideo = fullfile(outDir,[params.runName '_testTrack.avi']);
+params.outMat = fullfile(outDir, [params.runName '_testTrack.mat']);
+params.ellipseThresh   = [0.92 0.9];
+params.circleThresh = [0.08 0.999];
 
 params.cutPupil = 0;
 

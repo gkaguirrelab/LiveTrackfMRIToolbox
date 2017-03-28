@@ -23,13 +23,13 @@ function rpc = calcRpc(params)
 %   Written by Andrew S Bock Oct 2016
 
 %% Pull out variables
-targets         = [params.targets.X,params.targets.Y];
-pupil           = [params.pupil.X,params.pupil.Y];
-glint           = [params.glint.X,params.glint.Y];
+targets         = [params.targets.X, params.targets.Y];
+pupil           = [params.pupil.X, params.pupil.Y];
+glint           = [params.glint.X, params.glint.Y];
 viewDist        = params.viewDist;
 
 %% Find the corner target furthest from the center
-[~,I]           = max(sum(abs(targets),2));
+[~,I]           = max(nansum(abs(targets),2));
 cT              = targets(I, :);
 cP              = pupil(I, :);
 cG              = glint(I, :);

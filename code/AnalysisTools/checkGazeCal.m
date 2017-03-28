@@ -11,7 +11,7 @@ data = crsLiveTrackCalibrateRawData(CalMat, Rpc, pupil, glint);
 errors = sqrt((targets(:,1)-data(:,1)).^2+(targets(:,2)-data(:,2)).^2); 
 meanError = mean(errors(~isnan(errors))); %[mm]
 
-if length(errors(~isnan(errors))) > 7 && meanError < 11
+if length(errors(~isnan(errors))) > 6 && meanError < 11
     isGood = 1;
 else
     isGood = 0;

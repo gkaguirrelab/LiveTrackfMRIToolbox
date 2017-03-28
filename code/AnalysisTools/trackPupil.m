@@ -65,6 +65,9 @@ if ~isfield(params,'pupilOnly')
 end
 
 % params for image resizing and cropping
+if ~isfield (params, 'keepOriginalSize')
+    params.keepOriginalSize = 0;
+end
 if ~isfield(params,'imageSize')
     params.imageSize = [486 720]/2;
 end
@@ -103,6 +106,9 @@ end
 if ~isfield(params,'maskBox')
     params.maskBox   = [4 30];
 end
+if ~isfield(params,'gammaCorrection')
+    params.gammaCorrection   = 0.9;
+end
 if ~isfield(params,'overGlintCut')
     params.overGlintCut = 5;
 end
@@ -130,10 +136,13 @@ disp('Converting video to standard format, may take a while...');
 for i = 1:numFrames
     thisFrame           = readFrame(inObj);
     tmp                 = rgb2gray(thisFrame);
-    tmp2        = imresize(tmp,params.imageSize);
-    tmp3 = imcrop(tmp2,params.imageCrop);
-    grayI(:,:,i) = tmp3;
+    if params.keepOriginalSize == 0
+        tmp2 = imresize(tmp,params.imageSize);
+        tmp = imcrop(tmp2,params.imageCrop);
+    end
+    grayI(:,:,i) = tmp;
 end
+
 
 if isfield(params,'outVideo')
     outObj              = VideoWriter(params.outVideo);
@@ -366,7 +375,9 @@ switch params.pupilFit
         for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
-            
+            % adjust gamma for this frame
+            I = imadjust(I,[],[],params.gammaCorrection);
+%             I = imadjust(I,[.22 .4],[]);
             % Show the frame
             if isfield(params,'outVideo')
                 imshow(I);
@@ -390,16 +401,28 @@ switch params.pupilFit
                     else
                         % get pupil perimeter
                         [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
-                        
-                        % Fit ellipse to pupil
-                        [Xp, Yp] = ind2sub(size(binP),find(binP));
-                        Epi = ellipsefit_direct(Xp,Yp);
-                        Ep = ellipse_im2ex(Epi);
-                        
-                        % get errorMetric
-                        [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
-                        distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
-                        
+                        try
+                            % Fit ellipse to pupil
+                            [Xp, Yp] = ind2sub(size(binP),find(binP));
+                            Epi = ellipsefit_direct(Xp,Yp);
+                            Ep = ellipse_im2ex(Epi);
+                            
+                            % get errorMetric
+                            [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                            distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
+                        catch ME
+                        end
+                        if  exist ('ME', 'var')
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            clear ME
+                            continue
+                        end
+                            
                         % store results
                         if ~isempty(Ep)
                             pupil.X(i) = Ep(2);
@@ -414,6 +437,33 @@ switch params.pupilFit
                             pupil.circleRad(i) = pRadii(1);
                             pupil.circleX(i) = pCenters(1,1);
                             pupil.circleY(i) = pCenters(1,2);
+                            
+                            % plot results
+                             if ~isempty(Epi) && Ep(1) > 0
+                                a = num2str(Epi(1));
+                                b = num2str(Epi(2));
+                                c = num2str(Epi(3));
+                                d = num2str(Epi(4));
+                                e = num2str(Epi(5));
+                                f = num2str(Epi(6));
+                                
+                                % note that X and Y indices need to be swapped!
+                                eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+                                
+                                if isfield(params,'outVideo')
+                                    hold on
+                                    h= ezplot(eqt,[1, 240, 1, 320]);
+                                    % set color according to type of tracking
+                                    set (h, 'Color', 'green')
+                                    hold off
+                                end
+                            end % plot results
+                             % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
                         else
                             % circle params
                             pupil.circleStrength(i) = pMetric(1);
@@ -727,7 +777,7 @@ switch params.pupilFit
                                     end
                                     hold off
                                 end
-                            end
+                            end % plot results
                         end
                     end
                     
