@@ -58,7 +58,7 @@ function [pupil, glint, params] = trackPupil(params)
 
 % params to choose the tracking
 if ~isfield(params,'pupilFit')
-    params.pupilFit = 'ellipse';
+    params.pupilFit = 'bestPupilCut';
 end
 if ~isfield(params,'pupilOnly')
     params.pupilOnly = 0;
