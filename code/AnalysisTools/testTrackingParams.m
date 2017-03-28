@@ -56,7 +56,7 @@ processingDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,pa
 %% params for tracking
 outDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
 params.acqRate = 60;
-params.pupilFit = 'ellipse';
+params.pupilFit = 'bestPupilFit';
 % params.pupilFit = 'circle';
 params.inVideo = fullfile(outDir,[params.runName '_60hz.avi']);
 params.outVideo = fullfile(outDir,[params.runName '_testTracking.avi']);

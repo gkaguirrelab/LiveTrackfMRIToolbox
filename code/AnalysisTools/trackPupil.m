@@ -175,7 +175,7 @@ switch params.pupilFit
         glint.size = nan(numFrames,1);
         glint.circleStrength = nan(numFrames,1);
         
-    case 'ellipse'
+    case 'fixedPupilCut'
         % main pupil params
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
@@ -228,6 +228,78 @@ switch params.pupilFit
         
         % glint flags
         glint.flags.fittingFailure = nan(numFrames,1);
+        
+    case 'bestPupilCut'
+        
+        % define cuts
+        cuts = {...
+            'cut0' ...
+            'cut25' ...
+            'cut50' ...
+            'cut75' ...
+            'cut100' ...
+            %     'cut25right' ...
+            %     'cut50right' ...
+            };
+        
+        % best pupil params
+        pupil.X = nan(numFrames,1);
+        pupil.Y = nan(numFrames,1);
+        pupil.size = nan(numFrames,1);
+        pupil.bestCut = nan(numFrames,1);
+        pupil.bestError = nan(numFrames,1);
+        pupil.fullPerimeterLength = nan(numFrames,1);
+        
+        % all fitting params
+        for cc = 1 : length(cuts)
+            % perimeter params
+            pupil.(cuts{cc}).cutPixels = nan(numFrames,1);
+            % ellipse params
+            pupil.(cuts{cc}).implicitEllipseParams = nan(numFrames,6);
+            pupil.(cuts{cc}).explicitEllipseParams= nan(numFrames,5);
+            % error params
+            pupil.(cuts{cc}).distanceErrorMetric= nan(numFrames,1);
+            pupil.(cuts{cc}).axesRatio = nan(numFrames,1);
+            % eccentricity
+            pupil.(cuts{cc}).Yeccentricity = nan(numFrames,1);
+            pupil.(cuts{cc}).Xeccentricity = nan(numFrames,1);
+        end
+        
+        % pupil flags
+        pupil.flags.fittingFailure = nan(numFrames,1);
+        pupil.flags.noGlint = nan(numFrames,1);
+        pupil.flags.noPupil = nan(numFrames,1);
+        
+        % pupil mask params
+        pupilRange = params.pupilRange;
+        pupil.circleRad = nan(numFrames,1);
+        pupil.circleX = nan(numFrames,1);
+        pupil.circleY = nan(numFrames,1);
+        pupil.circleStrength = nan(numFrames,1);
+        % structuring element for pupil mask size
+        sep = strel('rectangle',params.maskBox);
+        
+        % main glint params
+        glint.X = nan(numFrames,1);
+        glint.Y = nan(numFrames,1);
+        glint.size = nan(numFrames,1);
+        
+        % glint fit params
+        glint.implicitEllipseParams = nan(numFrames,6);
+        glint.explicitEllipseParams= nan(numFrames,5);
+        glint.distanceErrorMetric= nan(numFrames,1);
+        
+        % glint mask params
+        glintRange = params.glintRange;
+        glint.circleRad = nan(numFrames,1);
+        glint.circleX = nan(numFrames,1);
+        glint.circleY = nan(numFrames,1);
+        glint.circleStrength = nan(numFrames,1);
+        
+        % glint flags
+        glint.flags.fittingFailure = nan(numFrames,1);
+        
+        
         
 end
 
@@ -290,7 +362,7 @@ switch params.pupilFit
             if ~mod(i,10);progBar(i);end;
         end
         
-    case 'ellipse'
+    case 'fixedPupilCut'
         for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
@@ -680,6 +752,341 @@ switch params.pupilFit
         end
         
         
+        
+        % -------- NEW CASE
+        
+    case 'bestPupilCut'
+        for i = 1:numFrames
+            % Get the frame
+            I = squeeze(grayI(:,:,i));
+            
+            % Show the frame
+            if isfield(params,'outVideo')
+                imshow(I);
+            end
+            
+            % track with circles
+            [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
+            
+            switch params.pupilOnly
+                
+                % track pupil only
+                case 1
+                    if isempty(pCenters)
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                    else
+                        % get pupil perimeter
+                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
+                        
+                        % Fit ellipse to pupil
+                        [Xp, Yp] = ind2sub(size(binP),find(binP));
+                        Epi = ellipsefit_direct(Xp,Yp);
+                        Ep = ellipse_im2ex(Epi);
+                        
+                        % get errorMetric
+                        [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                        distanceErrorMetric = nanmedian(sqrt(sum(d.^2)));
+                        
+                        % store results
+                        if ~isempty(Ep)
+                            pupil.X(i) = Ep(2);
+                            pupil.Y(i) = Ep(1);
+                            pupil.size(i) = Ep(3); % " bigger radius"
+                            % ellipse params
+                            pupil.implicitEllipseParams(i,:) = Epi';
+                            pupil.explicitEllipseParams(i,:) = Ep';
+                            pupil.distanceErrorMetric(i) = distanceErrorMetric;
+                            % circle patch params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                        else
+                            % circle params
+                            pupil.circleStrength(i) = pMetric(1);
+                            pupil.circleRad(i) = pRadii(1);
+                            pupil.circleX(i) = pCenters(1,1);
+                            pupil.circleY(i) = pCenters(1,2);
+                            
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            continue
+                        end
+                    end
+                    
+                    % track pupil and glint
+                case 0
+                    if isempty(gCenters) && isempty(pCenters)
+                        pupil.flags.noPupil(i) = 1;
+                        pupil.flags.noGlint(i) = 1;
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                    elseif isempty(pCenters) && ~isempty(gCenters)
+                        pupil.flags.noPupil(i) = 1;
+                        pupil.flags.noGlint(i) = 0;
+                        % circle params for glint
+                        glint.circleStrength(i) = gMetric(1);
+                        glint.circleRad(i) = gRadii(1);
+                        glint.circleX(i) = gCenters(1,1);
+                        glint.circleY(i) = gCenters(1,2);
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                        
+                    elseif ~isempty(pCenters) && isempty(gCenters)
+                        pupil.flags.noPupil(i) = 0;
+                        pupil.flags.noGlint(i) = 1;
+                        % circle params for pupil
+                        pupil.circleStrength(i) = pMetric(1);
+                        pupil.circleRad(i) = pRadii(1);
+                        pupil.circleX(i) = pCenters(1,1);
+                        pupil.circleY(i) = pCenters(1,2);
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        continue
+                        
+                    elseif ~isempty(pCenters) && ~isempty(gCenters)
+                        pupil.flags.noPupil(i) = 0;
+                        pupil.flags.noGlint(i) = 0;
+                        
+                        % Track the glint
+                        % getGlintPerimeter
+                        [binG] = getGlintPerimeter (I, gCenters, gRadii, params);
+                        
+                        % Fit ellipse to glint
+                        [Xg, Yg] = ind2sub(size(binG),find(binG));
+                        try
+                            Egi = ellipsefit_direct(Xg,Yg);
+                            Eg = ellipse_im2ex(Egi);
+                            
+                            % get errorMetric
+                            [~,dg,~,~] = ellipse_distance(Xg, Yg, Egi);
+                            gdistanceErrorMetric = nanmedian(sqrt(sum(dg.^2)));
+                        catch ME
+                        end
+                        if  exist ('ME', 'var')
+                            glint.X(i)= gCenters(1,1);
+                            glint.Y(i) = gCenters(1,2);
+                            glint.size(i) = gRadii(1);
+                            glint.circleStrength(i) = gMetric(1);
+                            glint.flags.fittingError(i) = 1;
+                            clear ME
+                        end
+                        
+                        % store results
+                        if exist ('Eg','var')
+                            if ~isempty (Eg) && isreal(Egi)
+                                glint.X(i) = Eg(2);
+                                glint.Y(i) = Eg(1);
+                                glint.circleStrength(i) = gMetric(1);
+                                glint.implicitEllipseParams(i,:) = Egi';
+                                glint.explicitEllipseParams(i,:) = Eg';
+                                glint.distanceErrorMetric(i) = gdistanceErrorMetric;
+                                % circle params for glint
+                                glint.circleStrength(i) = gMetric(1);
+                                glint.circleRad(i) = gRadii(1);
+                                glint.circleX(i) = gCenters(1,1);
+                                glint.circleY(i) = gCenters(1,2);
+                            end
+                        else
+                            glint.X(i)= gCenters(1,1);
+                            glint.Y(i) = gCenters(1,2);
+                            glint.size(i) = gRadii(1);
+                            glint.circleStrength(i) = gMetric(1);
+                        end
+                        
+                        
+                        % ------ NEW STUFF -------
+                        % Track the pupil
+                        % get pupil perimeter
+                        [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
+                        [Xp, Yp] = ind2sub(size(binP),find(binP));
+                        
+                        % store full perimeter length
+                        pupil.fullPerimeterLength(i) = length(Xp);
+                        
+                        % find pixels under and over glint
+                        underGlint = find (Xp > gCenters(1,2));  %%% MUST CHECK IF EMPTY
+                        overGlint = find (Xp < gCenters(1,2)); %%% MUST CHECK IF EMPTY
+                        
+                        
+                        for cc = 1 : length(cuts)
+                            cut = cuts{ii};
+                            switch cut
+                                case 'cut0'
+                                    % perimeter params
+                                    Xp = Xc;
+                                    Yp = Yc;
+                                    pupil.(cuts{cc}).cutPixels(i) = 0;
+                                case 'cut25'
+                                    % cut out top 25% of the overglint
+                                    cutout = length(Xp)/100 * 25;
+                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
+                                    [~, idx] = sort(Xp);
+                                    % get the cut perimeter
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(overGlint(idx(cutout:end))),Yp(overGlint(idx(cutout:end))))) = 1;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                case 'cut50'
+                                    % cut out top 50% of the overglint
+                                    cutout = length(Xp)/100 * 50;
+                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
+                                    [~, idx] = sort(Xp);
+                                    % get the cut perimeter
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(overGlint(idx(cutout:end))),Yp(overGlint(idx(cutout:end))))) = 1;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                case 'cut75'
+                                    % cut out top 75% of the overglint
+                                    cutout = length(Xp)/100 * 75;
+                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
+                                    [~, idx] = sort(Xp);
+                                    % get the cut perimeter
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(overGlint(idx(cutout:end))),Yp(overGlint(idx(cutout:end))))) = 1;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                case 'cut100'
+                                    % just get the underglint
+                                    binPcut = zeros(size(I));
+                                    pupil.(cuts{cc}).cutPixels(i) = length(overGlint);
+                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                            end
+                            % do the fitting on the surviving perimeter pixels
+                            try
+                                Epi = ellipsefit_direct(Xc,Yc);
+                                Ep = ellipse_im2ex(Epi);
+                                
+                                % store error metric
+                                [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                                pupil.(cuts{cc}).distanceErrorMetric(i) = nanmedian(sqrt(sum(d.^2)));
+                            catch ME
+                            end
+                            if  exist ('ME', 'var')
+                                pupil.(cuts{cc}).flags.fittingError(i) = 1;
+                                clear ME
+                                continue
+                            end
+                            % store results
+                            if exist ('Ep','var')
+                                if ~isempty(Ep) && isreal(Epi)
+                                    % ellipse params
+                                    pupil.(cuts{cc}).implicitEllipseParams(i,:) = Epi';
+                                    pupil.(cuts{cc}).explicitEllipseParams(i,:) = Ep';
+                                else
+                                    continue
+                                end
+                            else
+                                pupil.(cuts{cc}).flags.fittingError(i) = 1;
+                            end
+                        end
+                        
+                        
+                        % store other results
+                        % circle params
+                        pupil.circleStrength(i) = pMetric(1);
+                        pupil.circleRad(i) = pRadii(1);
+                        pupil.circleX(i) = pCenters(1,1);
+                        pupil.circleY(i) = pCenters(1,2);
+                        
+                        
+                        % find best error
+                        errors = [ pupil.(cuts{:}).distanceErrorMetric(i) ];
+                        
+                        if isempty(errors)
+                            pupil.flags.fittingError(i) = 1;
+                            % save frame
+                            if isfield(params,'outVideo')
+                                frame   = getframe(ih);
+                                writeVideo(outObj,frame);
+                            end
+                            if ~mod(i,10);progBar(i);end;
+                            continue
+                        end
+                        [pupil.bestError(i), eIDX] = nanmin (errors);
+                        
+                        pupil.bestCut(i) = cuts{eIDX};
+                        
+                        % store results
+                        pupil.X(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,2);
+                        pupil.Y(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,1);
+                        pupil.size(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,3);
+                        
+                        % plot results
+                        Epi = pupil.(cuts{eIDX}).implicitEllipseParams(i,:)' ;
+                        Ep = pupil.(cuts{eIDX}).explicitEllipseParams(i,:)' ;
+                        
+                        if ~isempty(Epi) && Ep(1) > 0
+                            a = num2str(Epi(1));
+                            b = num2str(Epi(2));
+                            c = num2str(Epi(3));
+                            d = num2str(Epi(4));
+                            e = num2str(Epi(5));
+                            f = num2str(Epi(6));
+                            
+                            % note that X and Y indices need to be swapped!
+                            eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+                            
+                            if isfield(params,'outVideo')
+                                hold on
+                                h= ezplot(eqt,[1, 240, 1, 320]);
+                                % set color according to type of tracking
+                                set (h, 'Color', 'green')
+                                if ~params.pupilOnly && ~isnan(glint.X(i))
+                                    hold on
+                                    plot(glint.X(i),glint.Y(i),'+b');
+                                end
+                                hold off
+                            end
+                        end
+                        
+                        % save frame
+                        if isfield(params,'outVideo')
+                            frame   = getframe(ih);
+                            writeVideo(outObj,frame);
+                        end
+                        if ~mod(i,10);progBar(i);end;
+                        clear Eg Egi Ep Epi errors
+                    end
+            end
+        end
+        
+        % save video
+        if isfield(params,'outVideo')
+            close(ih);
+            close(outObj);
+        end
+        
+        % save tracked values to output matrix
+        if isfield(params,'outMat')
+            save(params.outMat,'pupil','glint');
+        end
         
 end
 
