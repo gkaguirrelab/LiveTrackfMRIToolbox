@@ -58,7 +58,26 @@ switch params.trackType
             end
         end
         
-        [pupilSize,gaze] = calcPupilGaze(calParams);
+        % if exists a gaze calibration file by the same name in TOME_processing, load that
+        % instead
+        calName = runParams.gazeCalName(1:end-10);
+        betterCal = dir(fullfile(dropboxDir, 'TOME_processing', params.projectSubfolder, ...
+            params.subjectName,params.sessionDate,params.eyeTrackingDir, [calName '_calParams.mat']));
+        if ~isempty (betterCal) % && strcmp(params.projectSubfolder, 'session2_spatialStimuli')
+            calParams.gazeCalFile = (fullfile (betterCal.folder, betterCal.name));
+            runParams.gazeCalName = betterCal.name;
+        end
+        % if exists a size conversion factor file in TOME_processing, load
+        % that instead
+        sizeCal = dir(fullfile(dropboxDir, 'TOME_processing', params.projectSubfolder, ...
+            params.subjectName,params.sessionDate,params.eyeTrackingDir, 'sizeConversionFactor.mat'));
+        if ~isempty (sizeCal)
+            calParams.sizeConversionFactor = load(fullfile(sizeCal.folder, sizeCal.name));
+        end
+            
+        
+        
+        [pupilSize,gaze,pupilError,pupilCut] = calcPupilGaze(calParams);
         
         % load timeBase file
         timeBaseFile = fullfile(dropboxDir,'TOME_processing',runParams.projectSubfolder,...
@@ -73,6 +92,8 @@ switch params.trackType
         end
         
         % assemble response struct values
+        response.pupilError = pupilError';
+        response.pupilCut = pupilCut';
         response.pupilSize = pupilSize';
         response.gazeEcc = gaze.ecc;
         response.gazePol = gaze.pol;
