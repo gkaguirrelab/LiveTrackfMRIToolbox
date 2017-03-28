@@ -247,8 +247,9 @@ switch params.pupilFit
             'cut50' ...
             'cut75' ...
             'cut100' ...
-            %     'cut25right' ...
-            %     'cut50right' ...
+            'cut25right' ...
+            'cut50right' ...
+            'cut75right'...
             };
         
         % best pupil params
@@ -984,6 +985,8 @@ switch params.pupilFit
                         % find pixels under and over glint
                         underGlint = find (Xp > gCenters(1,2));  %%% MUST CHECK IF EMPTY
                         overGlint = find (Xp < gCenters(1,2)); %%% MUST CHECK IF EMPTY
+                        leftGlint = find (Yp < gCenters(1,1));
+                        rightGlint = find (Yp > gCenters(1,1));
                         
                         
                         for cc = 1 : length(cuts) % loop through cuts
@@ -1032,7 +1035,38 @@ switch params.pupilFit
                                     pupil.(cuts{cc}).cutPixels(i) = length(overGlint);
                                     binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
                                     [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                case 'cut25right'
+                                    cutout = round(length(rightGlint)/100 * 75);
+                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
+                                    [~, idx] = sort(rightGlint);
+                                    % get the cut perimeter
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                case 'cut50right'
+                                    cutout = round(length(rightGlint)/100 * 50);
+                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
+                                    [~, idx] = sort(rightGlint);
+                                    % get the cut perimeter
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                case 'cut75right'
+                                    cutout = round(length(rightGlint)/100 * 25);
+                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
+                                    [~, idx] = sort(rightGlint);
+                                    % get the cut perimeter
+                                    binPcut = zeros(size(I));
+                                    binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                    binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
+                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
                             end % switch cut
+                            
                             % do the fitting on the surviving perimeter pixels
                             try
                                 Epi = ellipsefit_direct(Xc,Yc);
@@ -1075,7 +1109,15 @@ switch params.pupilFit
                         
                         % find best error
                         for ee = 1: length(cuts)
-                        errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i);
+                            try
+                                errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i);
+                            catch ME
+                            end
+                            if exist ('ME', 'var')
+                                errors(ee) = NaN;
+                                clear ME
+                                continue
+                            end
                         end
                         
                         if isempty(errors)
