@@ -39,7 +39,7 @@ if ~isempty(rawVids)
     for rr = 1: length(rawVids)
         PXperMM(rr) = nanmedian(dotsPX(rr).size) / diameters(rr);
     end
-    sizeConversionFactor = median(PXperMM);
+    sizeConversionFactor = nanmedian(PXperMM);
 else
     % if no raw videos were acquired (early scans), track the livetrack videos
     for rr = 1: length(LTvids)
@@ -63,7 +63,7 @@ else
     for rr = 1: length(LTvids)
         PXperMM(rr) = nanmedian(dotsPX(rr).size) / diameters(rr);
     end
-   sizeConversionFactor = median(PXperMM);
+   sizeConversionFactor = nanmedian(PXperMM);
 end % track
 
 
