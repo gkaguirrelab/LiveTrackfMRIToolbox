@@ -106,6 +106,9 @@ end
 if ~isfield(params,'maskBox')
     params.maskBox   = [4 30];
 end
+if ~isfield(params,'gammaCorrection')
+    params.gammaCorrection   = 0.9;
+end
 if ~isfield(params,'overGlintCut')
     params.overGlintCut = 5;
 end
@@ -300,7 +303,9 @@ switch params.pupilFit
         for i = 1:numFrames
             % Get the frame
             I = squeeze(grayI(:,:,i));
-            
+            % adjust gamma for this frame
+            I = imadjust(I,[],[],params.gammaCorrection);
+%             I = imadjust(I,[.22 .4],[]);
             % Show the frame
             if isfield(params,'outVideo')
                 imshow(I);
