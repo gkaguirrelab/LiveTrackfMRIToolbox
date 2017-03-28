@@ -107,7 +107,7 @@ if ~isfield(params,'maskBox')
     params.maskBox   = [4 30];
 end
 if ~isfield(params,'gammaCorrection')
-    params.gammaCorrection   = 0.9;
+    params.gammaCorrection   = 1;
 end
 if ~isfield(params,'overGlintCut')
     params.overGlintCut = 5;
@@ -255,7 +255,7 @@ switch params.pupilFit
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
         pupil.size = nan(numFrames,1);
-        pupil.bestCut = nan(numFrames,1);
+        pupil.bestCut = strings(numFrames,1);
         pupil.bestError = nan(numFrames,1);
         pupil.fullPerimeterLength = nan(numFrames,1);
         
@@ -1006,9 +1006,9 @@ switch params.pupilFit
                                     [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
                                 case 'cut50'
                                     % cut out top 50% of the overglint
-                                    cutout = round(length(Xp)/100 * 50);
+                                    cutout = round(length(overGlint)/100 * 50);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(Xp);
+                                    [~, idx] = sort(overGlint);
                                     % get the cut perimeter
                                     binPcut = zeros(size(I));
                                     binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
@@ -1017,9 +1017,9 @@ switch params.pupilFit
                                     [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
                                 case 'cut75'
                                     % cut out top 75% of the overglint
-                                    cutout = round(length(Xp)/100 * 25);
+                                    cutout = round(length(overGlint)/100 * 25);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(Xp);
+                                    [~, idx] = sort(overGlint);
                                     % get the cut perimeter
                                     binPcut = zeros(size(I));
                                     binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
@@ -1074,7 +1074,9 @@ switch params.pupilFit
                         
                         
                         % find best error
-                        errors = [ pupil.(cuts{:}).distanceError(i) .* pupil.(cuts{:}).circularityError(i)];
+                        for ee = 1: length(cuts)
+                        errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i);
+                        end
                         
                         if isempty(errors)
                             pupil.flags.fittingError(i) = 1;
@@ -1088,7 +1090,7 @@ switch params.pupilFit
                         end
                         [pupil.bestError(i), eIDX] = nanmin (errors);
                         
-                        pupil.bestCut(i) = cuts{eIDX};
+                        pupil.bestCut(i) = (cuts{eIDX});
                         
                         % store results
                         pupil.X(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,2);
