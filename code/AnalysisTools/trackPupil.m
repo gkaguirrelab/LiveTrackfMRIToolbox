@@ -259,6 +259,7 @@ switch params.pupilFit
         pupil.bestCut = strings(numFrames,1);
         pupil.bestError = nan(numFrames,1);
         pupil.fullPerimeterLength = nan(numFrames,1);
+        pupil.area = nan(numFrames,1);
         
         % all fitting params
         for cc = 1 : length(cuts)
@@ -267,12 +268,16 @@ switch params.pupilFit
             % ellipse params
             pupil.(cuts{cc}).implicitEllipseParams = nan(numFrames,6);
             pupil.(cuts{cc}).explicitEllipseParams= nan(numFrames,5);
+            % area params
+            pupil.(cuts{cc}).area = nan(numFrames,1);
+            pupil.(cuts{cc}).varAreaPerSec = nan(numFrames,1);                   
             % error params
-            pupil.(cuts{cc}).distanceErrorMetric= nan(numFrames,1);
+            pupil.(cuts{cc}).distanceError= nan(numFrames,1);
             pupil.(cuts{cc}).axesRatio = nan(numFrames,1);
+            pupil.(cuts{cc}).areaVariationError = nan(numFrames,1);
             % eccentricity
-            pupil.(cuts{cc}).Yeccentricity = nan(numFrames,1);
-            pupil.(cuts{cc}).Xeccentricity = nan(numFrames,1);
+%             pupil.(cuts{cc}).Yeccentricity = nan(numFrames,1);
+%             pupil.(cuts{cc}).Xeccentricity = nan(numFrames,1);
         end
         
         % pupil flags
@@ -1075,8 +1080,20 @@ switch params.pupilFit
                                 % store error parameters
                                 [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
                                 pupil.(cuts{cc}).distanceError(i) = nanmedian(sqrt(sum(d.^2)));
+                                pupil.(cuts{cc}).area(i) = pi * Ep(3)* Ep(4);
                                 pupil.(cuts{cc}).axRatio(i) = Ep(3)./Ep(4);
+
                                 pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ))*4;
+                                
+                                if i > 6
+                                    prevArea = nanmedian(pupil.area(i-6:i-1));
+                                    pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *10;
+                                    pupil.(cuts{cc}).areaVariationError(i) = ( 1 ./ (1+exp( -(pupil.(cuts{cc}).varAreaPerSec(i)*.25-12.5) )))*4+1;
+                                else
+                                   pupil.(cuts{cc}).areaVariationError(i) = 1;
+                                end
+                                    
+                                
                             catch ME
                             end
                             if  exist ('ME', 'var')
@@ -1110,7 +1127,7 @@ switch params.pupilFit
                         % find best error
                         for ee = 1: length(cuts)
                             try
-                                errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i);
+                                errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i) .* pupil.(cuts{ee}).areaVariationError(i);
                             catch ME
                             end
                             if exist ('ME', 'var')
@@ -1138,6 +1155,7 @@ switch params.pupilFit
                         pupil.X(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,2);
                         pupil.Y(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,1);
                         pupil.size(i) = pupil.(cuts{eIDX}).explicitEllipseParams(i,3);
+                        pupil.area(i) = pupil.(cuts{eIDX}).area(i);
                         
                         % plot results
                         Epi = pupil.(cuts{eIDX}).implicitEllipseParams(i,:)' ;
