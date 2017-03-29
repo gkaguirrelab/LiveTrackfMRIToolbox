@@ -1076,7 +1076,7 @@ switch params.pupilFit
                                 [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
                                 pupil.(cuts{cc}).distanceError(i) = nanmedian(sqrt(sum(d.^2)));
                                 pupil.(cuts{cc}).axRatio(i) = Ep(3)./Ep(4);
-                                pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ));
+                                pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ))*4;
                             catch ME
                             end
                             if  exist ('ME', 'var')
