@@ -25,9 +25,10 @@ if ~isempty(rawVids)
         params.calName = rawVids(rr).name(1:end-9); %runs
         outDir = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
         params.acqRate = 60;
-        params.pupilFit = 'ellipse';
+        params.pupilFit = 'fixedPupilCut';
         params.ellipseThresh   = [0.94 0.9];
-        params.circleThresh = [0.05 0.999];
+        params.circleThresh = [0.03 0.999];
+        params.gammaCorrection = 1;
         params.inVideo = fullfile(outDir,[params.calName '_60hz.avi']);
         params.outVideo = fullfile(outDir,[params.calName '_calTrack.avi']);
         params.outMat = fullfile(outDir, [params.calName '_calTrack.mat']);

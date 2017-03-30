@@ -265,6 +265,7 @@ switch params.pupilFit
         for cc = 1 : length(cuts)
             % perimeter params
             pupil.(cuts{cc}).cutPixels = nan(numFrames,1);
+            pupil.(cuts{cc}).flags.cutError = nan(numFrames,1);
             % ellipse params
             pupil.(cuts{cc}).implicitEllipseParams = nan(numFrames,6);
             pupil.(cuts{cc}).explicitEllipseParams= nan(numFrames,5);
@@ -1006,71 +1007,107 @@ switch params.pupilFit
                                 case 'cut25'  % cut out top 25% of the overglint
                                     cutout = round(length(overGlint)/100 * 75);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(overGlint);
-                                    % get the cut perimeter
-                                    binPcut = zeros(size(I));
-                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if cutout > 0
+                                        [~, idx] = sort(overGlint);
+                                        % get the cut perimeter
+                                        binPcut = zeros(size(I));
+                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                                 case 'cut50'
                                     % cut out top 50% of the overglint
                                     cutout = round(length(overGlint)/100 * 50);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(overGlint);
-                                    % get the cut perimeter
-                                    binPcut = zeros(size(I));
-                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if cutout > 0
+                                        [~, idx] = sort(overGlint);
+                                        % get the cut perimeter
+                                        binPcut = zeros(size(I));
+                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                                 case 'cut75'
                                     % cut out top 75% of the overglint
                                     cutout = round(length(overGlint)/100 * 25);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(overGlint);
-                                    % get the cut perimeter
-                                    binPcut = zeros(size(I));
-                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if cutout > 0
+                                        [~, idx] = sort(overGlint);
+                                        % get the cut perimeter
+                                        binPcut = zeros(size(I));
+                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                                 case 'cut100'
                                     % just get the underglint
                                     binPcut = zeros(size(I));
                                     pupil.(cuts{cc}).cutPixels(i) = length(overGlint);
-                                    binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if ~isempty(overGlint) > 0
+                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                                 case 'cut25right'
                                     cutout = round(length(rightGlint)/100 * 75);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(rightGlint);
-                                    % get the cut perimeter
-                                    binPcut = zeros(size(I));
-                                    binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if cutout > 0
+                                        [~, idx] = sort(rightGlint);
+                                        % get the cut perimeter
+                                        binPcut = zeros(size(I));
+                                        binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                                 case 'cut50right'
                                     cutout = round(length(rightGlint)/100 * 50);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(rightGlint);
-                                    % get the cut perimeter
-                                    binPcut = zeros(size(I));
-                                    binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if cutout > 0
+                                        [~, idx] = sort(rightGlint);
+                                        % get the cut perimeter
+                                        binPcut = zeros(size(I));
+                                        binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                                 case 'cut75right'
                                     cutout = round(length(rightGlint)/100 * 25);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    [~, idx] = sort(rightGlint);
-                                    % get the cut perimeter
-                                    binPcut = zeros(size(I));
-                                    binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
-                                    binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
-                                    [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    if cutout > 0
+                                        [~, idx] = sort(rightGlint);
+                                        % get the cut perimeter
+                                        binPcut = zeros(size(I));
+                                        binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                        binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    else
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        continue
+                                    end
                             end % switch cut
                             
                             % do the fitting on the surviving perimeter pixels
@@ -1079,16 +1116,16 @@ switch params.pupilFit
                                 Ep = ellipse_im2ex(Epi);
                                 
                                 % store error parameters
-                                [~,d,~,~] = ellipse_distance(Xp, Yp, Epi);
+                                [~,d,~,~] = ellipse_distance(Xc, Yc, Epi);
                                 pupil.(cuts{cc}).distanceError(i) = nanmedian(sqrt(sum(d.^2)));
                                 pupil.(cuts{cc}).area(i) = pi * Ep(3)* Ep(4);
                                 pupil.(cuts{cc}).axRatio(i) = Ep(3)./Ep(4);
 
-                                pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ))*4;
+                                pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ))*9;
                                 
-                                if i > 3
-                                    prevArea = nanmedian(pupil.area(i-3:i-1));
-                                    pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *20 * 100;
+                                if i > 6
+                                    prevArea = nanmedian(pupil.area(i-6:i-1));
+                                    pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *10 * 100;
                                     pupil.(cuts{cc}).areaVariationError(i) = ( 1 ./ (1+exp( -(abs(pupil.(cuts{cc}).varAreaPerSec(i))*.25-12.5) )))*4+1;
                                     
                                 else
