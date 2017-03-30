@@ -1123,16 +1123,26 @@ switch params.pupilFit
 
                                 pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ))*9;
                                 
-                                if i > 6
-                                    prevArea = nanmedian(pupil.area(i-6:i-1));
-                                    pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *10 * 100;
-                                    pupil.(cuts{cc}).areaVariationError(i) = ( 1 ./ (1+exp( -(abs(pupil.(cuts{cc}).varAreaPerSec(i))*.25-12.5) )))*4+1;
+                                previousFrames = 6;
+                                if i > previousFrames
+                                    % get last frames best errors
+                                    bestErrors = pupil.bestError(i-previousFrames:i-1);
+                                    prevAreas = pupil.area(i-previousFrames:i-1);
+                                    bestIDX =  find(bestErrors < 20);
+                                    if ~isempty (bestIDX)
+                                        prevArea = nanmedian(prevAreas(bestIDX));
+                                        pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *10 * 100;
+                                        pupil.(cuts{cc}).areaVariationError(i) = ( 1 ./ (1+exp( -(abs(pupil.(cuts{cc}).varAreaPerSec(i))*.25-12.5) )))*4+1;
+                                    elseif isempty (bestIDX) && ~isnan(pupil.(cuts{cc}).areaVariationError(i-1))
+                                        pupil.(cuts{cc}).areaVariationError(i) = pupil.(cuts{cc}).areaVariationError(i-1);
+                                    else
+                                        pupil.(cuts{cc}).areaVariationError(i) = 1;
+                                    end
                                     
                                 else
                                    pupil.(cuts{cc}).areaVariationError(i) = 1;
                                 end
-                                    
-                                
+
                             catch ME
                             end
                             if  exist ('ME', 'var')
