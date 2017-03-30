@@ -273,8 +273,9 @@ switch params.pupilFit
             pupil.(cuts{cc}).varAreaPerSec = nan(numFrames,1);                   
             % error params
             pupil.(cuts{cc}).distanceError= nan(numFrames,1);
-            pupil.(cuts{cc}).axesRatio = nan(numFrames,1);
+            pupil.(cuts{cc}).axRatio = nan(numFrames,1);
             pupil.(cuts{cc}).areaVariationError = nan(numFrames,1);
+            pupil.(cuts{cc}).circularityError = nan(numFrames,1);
             % eccentricity
 %             pupil.(cuts{cc}).Yeccentricity = nan(numFrames,1);
 %             pupil.(cuts{cc}).Xeccentricity = nan(numFrames,1);
@@ -1085,10 +1086,11 @@ switch params.pupilFit
 
                                 pupil.(cuts{cc}).circularityError(i) = 1+ 1 ./ (1+exp( -(pupil.(cuts{cc}).axRatio(i)*20-28) ))*4;
                                 
-                                if i > 6
-                                    prevArea = nanmedian(pupil.area(i-6:i-1));
-                                    pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *10;
-                                    pupil.(cuts{cc}).areaVariationError(i) = ( 1 ./ (1+exp( -(pupil.(cuts{cc}).varAreaPerSec(i)*.25-12.5) )))*4+1;
+                                if i > 3
+                                    prevArea = nanmedian(pupil.area(i-3:i-1));
+                                    pupil.(cuts{cc}).varAreaPerSec(i) = ((pupil.(cuts{cc}).area(i) - prevArea) /prevArea) *20 * 100;
+                                    pupil.(cuts{cc}).areaVariationError(i) = ( 1 ./ (1+exp( -(abs(pupil.(cuts{cc}).varAreaPerSec(i))*.25-12.5) )))*4+1;
+                                    
                                 else
                                    pupil.(cuts{cc}).areaVariationError(i) = 1;
                                 end
