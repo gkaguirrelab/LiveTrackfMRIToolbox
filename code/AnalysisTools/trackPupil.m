@@ -250,6 +250,7 @@ switch params.pupilFit
             'cut25right' ...
             'cut50right' ...
             'cut75right'...
+            'cutDiagonal' ... % 25 up and 25 right
             };
         
         % best pupil params
@@ -1108,6 +1109,40 @@ switch params.pupilFit
                                         pupil.(cuts{cc}).flags.cutError(i) = 1;
                                         continue
                                     end
+                                case 'cutDiagonal'
+                                    cutoutR = round(length(rightGlint)/100 * 50);
+                                    cutoutU = round(length(overGlint)/100 * 50);
+                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
+                                    try
+                                        [~, idx] = sort(rightGlint);
+                                        % get the cut perimeter
+                                        binPcutU = zeros(size(I));
+                                        binPcutU(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
+                                        binPcutU(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
+                                        binPcutU(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutoutU/2):end - round(cutoutU/2)))),Yp(overGlint(idx(1+round(cutoutU/2):end - round(cutoutU/2)))))) = 0;
+                                        
+                                        binPcutR = zeros(size(I));
+                                        binPcutR(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
+                                        binPcutR(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
+                                        binPcutR(sub2ind(size(binP),Xp(rightGlint(idx(cutoutR:end))),Yp(rightGlint(idx(cutoutR:end))))) = 0;
+                                        % remove small objects 
+                                        binPcutM = immultiply(binPcutU,binPcutR);
+%                                         binPcutM = bwareaopen(binPcutM, 25);
+                                        CC = bwconncomp(binPcutM);
+                                        numPixels = cellfun(@numel,CC.PixelIdxList);
+                                        [biggest,idx] = max(numPixels);
+                                        binPcut = zeros(size(I));
+                                        binPcut(CC.PixelIdxList{idx}) = 1;
+                                        
+                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
+                                    catch ME
+                                    end
+                                    if  exist ('ME', 'var')
+                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
+                                        clear ME
+                                        continue
+                                    end
+                                    
                             end % switch cut
                             
                             % do the fitting on the surviving perimeter pixels
