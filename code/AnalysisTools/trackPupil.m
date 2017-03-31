@@ -264,7 +264,7 @@ switch params.pupilFit
         pupil.X = nan(numFrames,1);
         pupil.Y = nan(numFrames,1);
         pupil.size = nan(numFrames,1);
-        pupil.bestCut = strings(numFrames,1);
+        pupil.bestCut = string(nan(numFrames,1));
         pupil.bestError = nan(numFrames,1);
         pupil.fullPerimeterLength = nan(numFrames,1);
         pupil.area = nan(numFrames,1);
