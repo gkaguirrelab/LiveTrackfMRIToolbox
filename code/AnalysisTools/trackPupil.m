@@ -1130,32 +1130,37 @@ switch params.pupilFit
                         pupil.circleX(i) = pCenters(1,1);
                         pupil.circleY(i) = pCenters(1,2);
                         
+                        % if the fit was good on the full perimeter just
+                        % get that, otherwise compare to the cuts
                         
-                        % find best error
-                        for ee = 1: length(cuts)
-                            try
-                                errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i) .* pupil.(cuts{ee}).areaVariationError(i);
-                            catch ME
+                        if pupil.full.distanceError(i) < 10
+                            eIDX = 1;
+                        else
+                            % find best error
+                            for ee = 1: length(cuts)
+                                try
+                                    errors(ee) = pupil.(cuts{ee}).distanceError(i) .* pupil.(cuts{ee}).circularityError(i) .* pupil.(cuts{ee}).areaVariationError(i);
+                                catch ME
+                                end
+                                if exist ('ME', 'var')
+                                    errors(ee) = NaN;
+                                    clear ME
+                                    continue
+                                end
                             end
-                            if exist ('ME', 'var')
-                                errors(ee) = NaN;
-                                clear ME
+                            
+                            if isempty(errors)
+                                pupil.flags.fittingError(i) = 1;
+                                % save frame
+                                if isfield(params,'outVideo')
+                                    frame   = getframe(ih);
+                                    writeVideo(outObj,frame);
+                                end
+                                if ~mod(i,10);progBar(i);end;
                                 continue
                             end
+                            [pupil.bestError(i), eIDX] = nanmin (errors);
                         end
-                        
-                        if isempty(errors)
-                            pupil.flags.fittingError(i) = 1;
-                            % save frame
-                            if isfield(params,'outVideo')
-                                frame   = getframe(ih);
-                                writeVideo(outObj,frame);
-                            end
-                            if ~mod(i,10);progBar(i);end;
-                            continue
-                        end
-                        [pupil.bestError(i), eIDX] = nanmin (errors);
-                        
                         pupil.bestCut(i) = {(cuts{eIDX})};
                         
                         % store results
