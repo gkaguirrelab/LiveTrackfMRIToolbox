@@ -242,22 +242,10 @@ switch params.pupilFit
         
         % define cuts
         cuts = {...
-            'cut0' ...
-            'cut25' ...
-            'cut50' ...
-            'cut75' ...
-            'cut100' ...
-            'cut25right' ...
-            'cut50right' ...
-            'cut75right'...
-            'cutDiagonal2525' ... 
-            'cutDiagonal2550' ...
-            'cutDiagonal2575' ... 
-            'cutDiagonal5025' ...
-            'cutDiagonal5050' ... 
+            'full' ...
+            'cut75up' ... % cuts 75% of the pixels over the glint
+            'cut75right'... % cuts 75% of the pixels right of the glint 
             'cutDiagonal4075' ... 
-            'cutDiagonal7525' ... 
-            'cutDiagonal7540' ... 
             };
         
         % best pupil params
@@ -1007,61 +995,12 @@ switch params.pupilFit
                         for cc = 1 : length(cuts) % loop through cuts
                             cut = cuts{cc};
                             switch cut
-                                case 'cut0' % do not cut
+                                case 'full' % do not cut
                                     % perimeter params
                                     Xc = Xp;
                                     Yc = Yp;
                                     pupil.(cuts{cc}).cutPixels(i) = 0;
-                                case 'cut25'  % cut out top 25% of the overglint
-                                    cutout = round(length(overGlint)/100 * 75);
-                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    if cutout > 0
-                                        [~, idx] = sort(overGlint);
-                                        % get the cut perimeter
-                                        binPcut = zeros(size(I));
-                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                       % remove small objects 
-                                        CC = bwconncomp(binPcut);
-                                        numPixels = cellfun(@numel,CC.PixelIdxList);
-                                        [biggest,idx] = max(numPixels);
-                                        if idx >0
-                                            binPcut = zeros(size(I));
-                                            binPcut(CC.PixelIdxList{idx}) = 1;
-                                        end
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    else
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        continue
-                                    end
-                                case 'cut50'
-                                    % cut out top 50% of the overglint
-                                    cutout = round(length(overGlint)/100 * 50);
-                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    if cutout > 0
-                                        [~, idx] = sort(overGlint);
-                                        % get the cut perimeter
-                                        binPcut = zeros(size(I));
-                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                       % remove small objects 
-                                        CC = bwconncomp(binPcut);
-                                        numPixels = cellfun(@numel,CC.PixelIdxList);
-                                        [biggest,idx] = max(numPixels);
-                                        if idx >0
-                                            binPcut = zeros(size(I));
-                                            binPcut(CC.PixelIdxList{idx}) = 1;
-                                        end
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    else
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        continue
-                                    end
-                                case 'cut75'
+                                case 'cut75up'
                                     % cut out top 75% of the overglint
                                     cutout = round(length(overGlint)/100 * 25);
                                     pupil.(cuts{cc}).cutPixels(i) = cutout;
@@ -1073,74 +1012,6 @@ switch params.pupilFit
                                         binPcut(sub2ind(size(binP),Xp(overGlint),Yp(overGlint))) = 1;
                                         binPcut(sub2ind(size(binP),Xp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(overGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
                                         % remove small objects 
-                                        CC = bwconncomp(binPcut);
-                                        numPixels = cellfun(@numel,CC.PixelIdxList);
-                                        [biggest,idx] = max(numPixels);
-                                        if idx >0
-                                            binPcut = zeros(size(I));
-                                            binPcut(CC.PixelIdxList{idx}) = 1;
-                                        end
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    else
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        continue
-                                    end
-                                case 'cut100'
-                                    % just get the underglint
-                                    binPcut = zeros(size(I));
-                                    pupil.(cuts{cc}).cutPixels(i) = length(overGlint);
-                                    if ~isempty(overGlint) > 0
-                                        binPcut(sub2ind(size(binP),Xp(underGlint),Yp(underGlint))) = 1;
-                                        % remove small objects 
-                                        CC = bwconncomp(binPcut);
-                                        numPixels = cellfun(@numel,CC.PixelIdxList);
-                                        [biggest,idx] = max(numPixels);
-                                        if idx >0
-                                            binPcut = zeros(size(I));
-                                            binPcut(CC.PixelIdxList{idx}) = 1;
-                                        end
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    else
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        continue
-                                    end
-                                case 'cut25right'
-                                    cutout = round(length(rightGlint)/100 * 75);
-                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    if cutout > 0
-                                        [~, idx] = sort(rightGlint);
-                                        % get the cut perimeter
-                                        binPcut = zeros(size(I));
-                                        binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))),Yp(rightGlint(idx(1+round(cutout/2):end - round(cutout/2)))))) = 0;
-                                        % remove small objects 
-                                        CC = bwconncomp(binPcut);
-                                        numPixels = cellfun(@numel,CC.PixelIdxList);
-                                        [biggest,idx] = max(numPixels);
-                                        if idx >0
-                                            binPcut = zeros(size(I));
-                                            binPcut(CC.PixelIdxList{idx}) = 1;
-                                        end
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    else
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        continue
-                                    end
-                                case 'cut50right'
-                                    cutout = round(length(rightGlint)/100 * 50);
-                                    pupil.(cuts{cc}).cutPixels(i) = cutout;
-                                    if cutout > 0
-                                        [~, idx] = sort(rightGlint);
-                                        % get the cut perimeter
-                                        binPcut = zeros(size(I));
-                                        binPcut(sub2ind(size(binP),Xp(leftGlint),Yp(leftGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(rightGlint),Yp(rightGlint))) = 1;
-                                        binPcut(sub2ind(size(binP),Xp(rightGlint(idx(cutout:end))),Yp(rightGlint(idx(cutout:end))))) = 0;
-                                       % remove small objects 
                                         CC = bwconncomp(binPcut);
                                         numPixels = cellfun(@numel,CC.PixelIdxList);
                                         [biggest,idx] = max(numPixels);
@@ -1178,92 +1049,6 @@ switch params.pupilFit
                                         pupil.(cuts{cc}).flags.cutError(i) = 1;
                                         continue
                                     end
-                                case 'cutDiagonal2525'
-                                    cutoutU = round(length(overGlint)/100 * 75);
-                                    cutoutR = round(length(rightGlint)/100 * 75);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                        binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
- 
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end
-                                 case 'cutDiagonal2550'
-                                    cutoutU = round(length(overGlint)/100 * 75);
-                                    cutoutR = round(length(rightGlint)/100 * 50);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                       binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
-                                        
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end  
-                                    case 'cutDiagonal2575'
-                                    cutoutU = round(length(overGlint)/100 * 75);
-                                    cutoutR = round(length(rightGlint)/100 * 25);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                        binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
-                                        
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end
-                                    case 'cutDiagonal5025'
-                                    cutoutU = round(length(overGlint)/100 * 50);
-                                    cutoutR = round(length(rightGlint)/100 * 75);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                       binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
-                                        
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end
-                                    case 'cutDiagonal5050'
-                                    cutoutU = round(length(overGlint)/100 * 50);
-                                    cutoutR = round(length(rightGlint)/100 * 50);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                        [~, idx] = sort(rightGlint);
-                                      binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
-                                        
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end
                                     case 'cutDiagonal4075'
                                     cutoutU = round(length(overGlint)/100 * 60);
                                     cutoutR = round(length(rightGlint)/100 * 25);
@@ -1271,40 +1056,6 @@ switch params.pupilFit
                                     pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
                                     try
                                        binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
-                                        
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end
-                                    case 'cutDiagonal7525'
-                                    cutoutU = round(length(overGlint)/100 * 25);
-                                    cutoutR = round(length(rightGlint)/100 * 75);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                       binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
-                                        
-                                        [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
-                                        pupil.(cuts{cc}).flags.cutError(i) = 0;
-                                    catch ME
-                                    end
-                                    if  exist ('ME', 'var')
-                                        pupil.(cuts{cc}).flags.cutError(i) = 1;
-                                        clear ME
-                                        continue
-                                    end
-                                    case 'cutDiagonal7540'
-                                    cutoutU = round(length(overGlint)/100 * 25);
-                                    cutoutR = round(length(rightGlint)/100 * 60);
-                                    
-                                    pupil.(cuts{cc}).cutPixels(i) = cutoutR + cutoutU;
-                                    try
-                                        binPcut = pupilDiagonalCut (I, cutoutU, cutoutR, binP, underGlint, overGlint, leftGlint, rightGlint);
                                         
                                         [Xc, Yc] = ind2sub(size(binPcut),find(binPcut));
                                         pupil.(cuts{cc}).flags.cutError(i) = 0;
