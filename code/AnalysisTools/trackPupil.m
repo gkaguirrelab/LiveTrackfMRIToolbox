@@ -1132,9 +1132,9 @@ switch params.pupilFit
                         
                         % if the fit was good on the full perimeter just
                         % get that, otherwise compare to the cuts
-                        
-                        if pupil.full.distanceError(i) < 10
+                        if pupil.full.distanceError(i) < 12
                             eIDX = 1;
+                            pupil.bestError(i) = pupil.(cuts{1}).distanceError(i) .* pupil.(cuts{1}).circularityError(i) .* pupil.(cuts{1}).areaVariationError(i);
                         else
                             % find best error
                             for ee = 1: length(cuts)
@@ -1161,6 +1161,7 @@ switch params.pupilFit
                             end
                             [pupil.bestError(i), eIDX] = nanmin (errors);
                         end
+                        
                         pupil.bestCut(i) = {(cuts{eIDX})};
                         
                         % store results
