@@ -8,9 +8,10 @@ clc
 userName = strtrim(tmpName);
 
 dropboxDir = ['/Users/' userName '/Dropbox-Aguirre-Brainard-Lab'];
-dropboxDir = '/Volumes/Bay_2_data/giulia/Dropbox-Aguirre-Brainard-Lab';
+dropboxDir = '~/Desktop';
 
 outDir = ['/Users/' userName '/Desktop'];
+dropboxDir=outDir;
 
 %% sample run
 params.subjectName = 'TOME_3008';
@@ -20,6 +21,7 @@ params.runName = 'rfMRI_REST_AP_run01';
 
 %% set paths
 videoPath = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
+videoPath = dropboxDir;
 params.inVideo = fullfile(videoPath,[params.runName '_60hz.avi']);
 params.outVideo = fullfile(outDir,[params.runName '_perimeter.avi']);
 
@@ -119,7 +121,9 @@ for i = 1:numFrames
     [Xc, Yc] = ind2sub(size(binP),find(binP));
     
     try
-        Epi = ellipsefit_direct(Xc,Yc);
+        [Epi,~,~] = ellipsefit_bads(Xc,Yc);
+%        [Epi,~,~] = ellipsefit(Xc,Yc);
+%        Epi = ellipsefit_direct(Xc,Yc);
         Ep = ellipse_im2ex(Epi);
     catch ME
     end
