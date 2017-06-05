@@ -87,7 +87,7 @@ switch lower(method)
         peinit = ellipse_im2ex(pinit);
         
         % We will minimize the sqrt of the sum of squared distance values
-        % of the ellipse fit to the points
+        % of the points to the ellipse fit
         myFun = @(p) sqrt(sum(ellipsefit_distance(x,y,p).^2));
         [pe,e] = bads(myFun, peinit, [-Inf,-Inf,0,0,-0.5*pi], [Inf,Inf,Inf,Inf,0.5*pi], [0,0,5,5,-0.5*pi], [320,240,150,150,0.5*pi], [], opts);
         p = ellipse_ex2im(pe);
