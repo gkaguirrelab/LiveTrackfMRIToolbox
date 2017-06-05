@@ -38,20 +38,20 @@ if ~isfield(params,'imageCrop')
 end
 
 % params for circleFit (always needed)
-    params.rangeAdjust = 0.05;
-    params.circleThresh = [0.085 0.999];
-    params.pupilRange   = [20 90];
-    params.glintRange   = [10 30];
-    params.glintOut     = 0.1;
-    params.sensitivity  = 0.99;
-    params.dilateGlint  = 5;
-    params.pupilOnly = 0;
+params.rangeAdjust = 0.05;
+params.circleThresh = [0.085 0.999];
+params.pupilRange   = [20 90];
+params.glintRange   = [10 30];
+params.glintOut     = 0.1;
+params.sensitivity  = 0.99;
+params.dilateGlint  = 5;
+params.pupilOnly = 0;
 
 % structuring element for pupil mask size
 params.maskBox   = [4 30];
 sep = strel('rectangle',params.maskBox);
 
-% force number of frames        
+% force number of frames
 params.forceNumFrames = 200;
 params.ellipseThresh   = [0.9 0.9];
 params.gammaCorrection = 1;
@@ -92,8 +92,8 @@ if isfield(params,'outVideo')
 end
 
 clear RGB inObj
-        
-% extract perimeter        
+
+% extract perimeter
 for i = 1:numFrames
     % Get the frame
     I = squeeze(grayI(:,:,i));
@@ -101,10 +101,10 @@ for i = 1:numFrames
     % adjust gamma for this frame
     I = imadjust(I,[],[],params.gammaCorrection);
     
-%     % Show the frame
-%     if isfield(params,'outVideo')
-%         imshow(I);
-%     end
+    %     % Show the frame
+    %     if isfield(params,'outVideo')
+    %         imshow(I);
+    %     end
     
     
     % track with circles
@@ -116,7 +116,50 @@ for i = 1:numFrames
     
     imshow(binP)
     
-    [Xp, Yp] = ind2sub(size(binP),find(binP));
+    [Xc, Yc] = ind2sub(size(binP),find(binP));
+    
+    try
+        Epi = ellipsefit_direct(Xc,Yc);
+        Ep = ellipse_im2ex(Epi);
+    catch ME
+    end
+    if  exist ('ME', 'var')
+        clear ME
+        continue
+    end
+    
+    % store results
+    if exist ('Ep','var')
+        if ~isempty(Ep) && isreal(Epi)
+            % ellipse params
+            pupil.implicitEllipseParams(i,:) = Epi';
+            pupil.explicitEllipseParams(i,:) = Ep';
+        else
+            continue
+        end
+    else
+        pupil.implicitEllipseParams(i,:) = NaN;
+        pupil.explicitEllipseParams(i,:) = NaN;
+    end
+    
+    % plot
+    if ~isempty(Epi) && Ep(1) > 0
+        a = num2str(Epi(1));
+        b = num2str(Epi(2));
+        c = num2str(Epi(3));
+        d = num2str(Epi(4));
+        e = num2str(Epi(5));
+        f = num2str(Epi(6));
+        
+        % note that X and Y indices need to be swapped!
+        eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+        
+        if isfield(params,'outVideo')
+            hold on
+            h= ezplot(eqt,[1, 240, 1, 320]);
+            set (h, 'Color', 'green')
+        end
+    end
     
     % save frame
     if isfield(params,'outVideo')
@@ -124,6 +167,7 @@ for i = 1:numFrames
         writeVideo(outObj,frame);
     end
 end
+
 
 
 % save video
