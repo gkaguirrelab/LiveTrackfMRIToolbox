@@ -28,8 +28,8 @@ params.eyeTrackingDir = 'EyeTracking';
 params.analysisDir = 'TOME_analysis';
 
 % subject
-params.subjectName = 'TOME_3014';
-params.sessionDate = '021517';
+params.subjectName = 'TOME_3008';
+params.sessionDate = '102116';
 
 % session
 params.projectSubfolder = 'session1_restAndStructure';
@@ -61,9 +61,9 @@ params.pupilFit = 'bestPupilCut';
 params.inVideo = fullfile(outDir,[params.runName '_60hz.avi']);
 params.outVideo = fullfile(outDir,[params.runName '_testTrack.avi']);
 params.outMat = fullfile(outDir, [params.runName '_testTrack.mat']);
-params.ellipseThresh   = [0.936 0.9];
-params.circleThresh = [0.08 0.999];
-params.gammaCorrection = 1.4;
+params.ellipseThresh   = [0.9 0.9];
+params.circleThresh = [0.085 0.999];
+params.gammaCorrection = 1;
 
 params.cutPupil = 0;
 
