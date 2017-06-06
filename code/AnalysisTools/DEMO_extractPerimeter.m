@@ -95,6 +95,23 @@ end
 
 clear RGB inObj
 
+% Define the hard upper and lower boundaries
+lb = [0,0,1,1,-0.5*pi];
+ub = [240,320,200,200,0.5*pi];
+
+% Define the initial plausble upper and lower boundaries
+plb=[0,0,5,5,-0.5*pi];
+pub=[320,240,100,100,0.5*pi];
+
+% Define a prior window in units of samples
+window=50;
+windowSupport=1:1:window;
+exponentialTauParam = window/4;
+
+% Define a decaying exponential function that will be used to weight the
+% contribution of prior values to the creation of the prior distribution
+exponentialWeights=fliplr(exp(-1/exponentialTauParam*windowSupport));
+
 % extract perimeter
 for i = 1:numFrames
     % Get the frame
@@ -102,12 +119,6 @@ for i = 1:numFrames
     
     % adjust gamma for this frame
     I = imadjust(I,[],[],params.gammaCorrection);
-    
-    %     % Show the frame
-    %     if isfield(params,'outVideo')
-    %         imshow(I);
-    %     end
-    
     
     % track with circles
     pupilRange = params.pupilRange;
@@ -121,9 +132,7 @@ for i = 1:numFrames
     [Xc, Yc] = ind2sub(size(binP),find(binP));
     
     try
-        [Epi,~,~] = ellipsefit_bads(Xc,Yc);
-%        [Epi,~,~] = ellipsefit(Xc,Yc);
-%        Epi = ellipsefit_direct(Xc,Yc);
+        [Epi,fitError,~] = ellipsefit_bads(Xc,Yc,lb,ub,plb,pub);
         Ep = ellipse_im2ex(Epi);
     catch ME
     end
@@ -132,18 +141,23 @@ for i = 1:numFrames
         continue
     end
     
+    Ep
+    fitError
+    
     % store results
     if exist ('Ep','var')
         if ~isempty(Ep) && isreal(Epi)
             % ellipse params
             pupil.implicitEllipseParams(i,:) = Epi';
             pupil.explicitEllipseParams(i,:) = Ep';
+            pupil.fitError(i) = fitError;
         else
             continue
         end
     else
         pupil.implicitEllipseParams(i,:) = NaN;
         pupil.explicitEllipseParams(i,:) = NaN;
+        pupil.fitError(i)=Inf;
     end
     
     % plot
@@ -170,6 +184,26 @@ for i = 1:numFrames
         frame   = getframe(ih);
         writeVideo(outObj,frame);
     end
+    
+    % update the plausible bounds
+
+    % Obtain the mean of the prior major axis values, weighted by the
+    % decaying exponential in time and by the inverse fitError
+
+    range=min([window,i-1]);
+    
+    dataVector=squeeze(pupil.explicitEllipseParams(:,3))';
+    errorVector=squeeze(pupil.fitError(:));
+    mean_prior = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
+    plb(3)=mean_prior*0.9;
+    pub(3)=mean_prior*1.1;
+
+    dataVector=squeeze(pupil.explicitEllipseParams(:,4))';
+    errorVector=squeeze(pupil.fitError(:));
+    mean_prior = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
+    plb(4)=mean_prior*0.9;
+    pub(4)=mean_prior*1.1;
+    
 end
 
 
