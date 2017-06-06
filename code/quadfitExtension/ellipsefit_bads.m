@@ -1,4 +1,4 @@
-function [p,e,d] = ellipsefit_bads(x,y,varargin)
+function [p,e,d] = ellipsefit_bads(x,y, lb, ub, plb, pub)
 % Fit an ellipse to data by minimizing point-to-curve distance.
 %
 % This function uses an iterative procedure. For a non-iterative approach, use
@@ -8,23 +8,26 @@ function [p,e,d] = ellipsefit_bads(x,y,varargin)
 % p:
 %    parameters of ellipse expressed in implicit form
 % e:
-%    mean square distance
+%    sqrt sum square distance
 % d:
 %    distance from data points to fitted ellipse
 %
 % See also: ellipsefit_direct
 
 % Copyright 2011 Levente Hunyadi
+% Modified 2017 Geoffrey Aguirre
 
 if ~exist('bads','file')
     error('LiveTrackfMRIToolbox:DependencyMissing', 'This function requires the BADS Bayesian non-linear search tool.\n');
 end
 
-narginchk(2,Inf);
-validateattributes(x, {'numeric'}, {'real','nonempty','vector'});
-validateattributes(y, {'numeric'}, {'real','nonempty','vector'});
-x = x(:);
-y = y(:);
+% if the plausible upper and lower bounds not set, use the hard bounds
+if ~isempty(plb)
+    plb=lb;
+end
+if ~isempty(pub)
+    pub=ub;
+end
 
 % compute a close-enough initial estimate
 pinit = quad2dfit_taubin(x,y);
@@ -34,69 +37,24 @@ switch imconic(pinit,0)
         pinit = ellipsefit_direct(x,y);
 end
 
-method = 'bads';
-outputfcn = [];
-for k = 1 : 2 : numel(varargin)
-    validateattributes(varargin{k}, {'char'}, {'nonempty','row'});
-    arg = varargin{k+1};
-    switch lower(varargin{k})
-        case 'method'
-            validateattributes(arg, {'char'}, {'nonempty','row'});
-            method = arg;
-        case 'outputfcn'
-            validateattributes(arg, {'function_handle'}, {'scalar'});
-            outputfcn = arg;
-    end
+% Perform Bayesian Adaptive Direct Search (BADS) optimization
+% https://github.com/lacerbi/bads
+opts = bads('defaults');   % Get a default OPTIONS struct
+opts.Display = 'off';      % Print only basic output ('off' turns off)
+peinit = ellipse_im2ex(pinit);
+% We will minimize the sqrt of the sum of squared distance values
+% of the points to the ellipse fit
+myFun = @(p) sqrt(sum(ellipsefit_distance(x,y,p).^2));
+[pe,e] = bads(myFun, peinit, lb, ub, plb, pub, [], opts);
+p = ellipse_ex2im(pe);
+
+if nargout > 2
+    d = ellipsefit_distance(x,y,pe);
 end
 
-switch lower(method)
-    case 'kepler'
-        opts = optimset( ...
-            ... %'Algorithm', 'levenberg-marquardt', ...
-            'DerivativeCheck', 'on', ...
-            'Display', 'off', ...
-            'Jacobian', 'off', ...
-            'OutputFcn', outputfcn);
-        pkinit = ellipse_im2kepler(pinit);
-        [pk,e] = lsqnonlin(@(p) ellipsefit_distance_kepler(x,y,p), pkinit, [], [], opts);
-        p = ellipse_kepler2im(pk);
-        
-        if nargout > 2
-            d = ellipsefit_distance_kepler(x,y,pk);
-        end
-    case 'explicit'
-        opts = optimset( ...
-            ... %'Algorithm', 'levenberg-marquardt', ...
-            'DerivativeCheck', 'on', ...
-            'Display', 'off', ...
-            'Jacobian', 'off', ...
-            'OutputFcn', outputfcn);
-        peinit = ellipse_im2ex(pinit);
-        [pe,e] = lsqnonlin(@(p) ellipsefit_distance(x,y,p), peinit, [-Inf,-Inf,0,0,-0.5*pi], [Inf,Inf,Inf,Inf,0.5*pi], opts);
-        p = ellipse_ex2im(pe);
-        
-        if nargout > 2
-            d = ellipsefit_distance(x,y,pe);
-        end
-    case 'bads'
-        
-        % Bayesian Adaptive Direct Search (BADS) optimization
-        % https://github.com/lacerbi/bads
-        opts = bads('defaults');   % Get a default OPTIONS struct
-        opts.Display = 'off';      % Print only basic output ('off' turns off)
-        peinit = ellipse_im2ex(pinit);
-        
-        % We will minimize the sqrt of the sum of squared distance values
-        % of the points to the ellipse fit
-        myFun = @(p) sqrt(sum(ellipsefit_distance(x,y,p).^2));
-        [pe,e] = bads(myFun, peinit, [-Inf,-Inf,0,0,-0.5*pi], [Inf,Inf,Inf,Inf,0.5*pi], [0,0,5,5,-0.5*pi], [320,240,150,150,0.5*pi], [], opts);
-        p = ellipse_ex2im(pe);
-        
-        if nargout > 2
-            d = ellipsefit_distance(x,y,pe);
-        end
-end
 e = e / numel(x);
+
+
 
 function [d,ddp] = ellipsefit_distance(x,y,p)
 % Distance of points to ellipse defined with parameters center, axes and tilt.
