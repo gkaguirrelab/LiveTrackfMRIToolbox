@@ -30,5 +30,5 @@ function p = ellipse_transparent(c1,c2,a,b,theta)
 p(1)=c1;
 p(2)=c2;
 p(3)=pi*a*b;
-p(4)=sqrt(1-b^2/a^2);
+p(4)=sqrt(1- (b^2/a^2));
 p(5)=theta;

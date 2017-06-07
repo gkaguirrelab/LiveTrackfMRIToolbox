@@ -1,4 +1,4 @@
-function [p,e,d] = calcPupilLikelihood(x,y, lb, ub, plb, pub)
+function [pFitTransparent, pSD, e] = calcPupilLikelihood(x,y, lb, ub, plb, pub)
 % This function takes 
 
 % Fit an ellipse to data by minimizing point-to-curve distance.
@@ -7,14 +7,24 @@ function [p,e,d] = calcPupilLikelihood(x,y, lb, ub, plb, pub)
 % a direct least squares fit.
 %
 % Output arguments:
-% p:
+% pFitTransparent:
 %    parameters of ellipse expressed in transparent form
 % pSD:
 %    standard deviations of the parameters estimated by bootstrap
-% d:
+% e:
 %    sqrt of the sum squared distance of the likelihood fit to the data
 %
-% Input argument
+% Input arguments
+% x,y:
+%    vector of points that define the edge of the pupil to be fit
+%
+% lb, ub:
+%    upper and lower bounds for the fit search (in ellipse transparent
+%    form)
+%
+% plb, pub:
+%    upper and lower "plausible" bounds for the fit search, which is used
+%    by the BADS search routine
 
 
 if ~exist('bads','file')
@@ -30,34 +40,31 @@ if ~isempty(pub)
 end
 
 % compute a close-enough initial estimate
-pinit = quad2dfit_taubin(x,y);
-switch imconic(pinit,0)
+pInitImplicit = quad2dfit_taubin(x,y);
+switch imconic(pInitImplicit,0)
     case 'ellipse'  % use Taubin's fit, which has produced an ellipse
     otherwise  % use direct least squares ellipse fit to obtain an initial estimate
-        pinit = ellipsefit_direct(x,y);
+        pInitImplicit = ellipsefit_direct(x,y);
 end
+
+% conver the initial estimate from implicit form to transparent form
+pInitTransparent = ellipse_ex2transparent(ellipse_im2ex(pInitImplicit));
 
 % Perform Bayesian Adaptive Direct Search (BADS) optimization
 % https://github.com/lacerbi/bads
 opts = bads('defaults');   % Get a default OPTIONS struct
 opts.Display = 'off';      % Print only basic output ('off' turns off)
-peinit = ellipse_im2ex(pinit);
+
 % We will minimize the sqrt of the sum of squared distance values
 % of the points to the ellipse fit
-myFun = @(p) sqrt(sum(ellipsefit_distance(x,y,p).^2));
-[pe,e] = bads(myFun, peinit, lb, ub, plb, pub, [], opts);
-p = ellipse_ex2im(pe);
+myFun = @(p) sqrt(nansum(ellipsefit_distance(x,y,ellipse_transparent2ex(p)).^2));
+[pFitTransparent,e] = bads(myFun, pInitTransparent, lb, ub, plb, pub, [], opts);
 
-if nargout > 2
-    d = ellipsefit_distance(x,y,pe);
-end
-
-e = e / numel(x);
-
-
+pSD=0;
 
 function [d,ddp] = ellipsefit_distance(x,y,p)
-% Distance of points to ellipse defined with parameters center, axes and tilt.
+% Distance of points to ellipse defined with explicit parameters (center,
+% axes and tilt).
 % P = b^2*((x-cx)*cos(theta)-(y-cy)*sin(theta))
 %   + a^2*((x-cx)*sin(theta)+(y-cy)*cos(theta))
 %   - a^2*b^2 = 0

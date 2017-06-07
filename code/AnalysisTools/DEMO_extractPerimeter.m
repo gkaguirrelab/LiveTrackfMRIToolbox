@@ -95,13 +95,17 @@ end
 
 clear RGB inObj
 
+% We will fit ellipses that are cast in "transparent" parameter form:
+% center (cx,cy), its area (a), its eccentricity (e), and its angle of tilt
+% (theta).
+
 % Define the hard upper and lower boundaries
-lb = [0,0,1,1,-0.5*pi];
-ub = [240,320,200,200,0.5*pi];
+lb = [0,  0,  75,   0,  -0.5*pi];
+ub = [240,320,10000,0.7, 0.5*pi];
 
 % Define the initial plausble upper and lower boundaries
-plb=[0,0,5,5,-0.5*pi];
-pub=[320,240,100,100,0.5*pi];
+plb = [0,  0,  75,   0,  -0.5*pi];
+pub = [240,320,10000,0.7, 0.5*pi];
 
 % Define a prior window in units of samples
 window=50;
@@ -131,43 +135,42 @@ for i = 1:numFrames
     
     [Xc, Yc] = ind2sub(size(binP),find(binP));
     
-    try
-        [Epi,fitError,~] = ellipsefit_bads(Xc,Yc,lb,ub,plb,pub);
-        Ep = ellipse_im2ex(Epi);
-    catch ME
-    end
-    if  exist ('ME', 'var')
-        clear ME
-        continue
-    end
+%    try
+        [pFitTransparent, pSD, fitError] = calcPupilLikelihood(Xc,Yc, lb, ub, plb, pub);
+        pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pFitTransparent));
+%    catch ME
+%    end
+%    if  exist ('ME', 'var')
+%%        clear ME
+ %       continue
+ %   end
     
-    Ep
-    fitError
     
     % store results
-    if exist ('Ep','var')
-        if ~isempty(Ep) && isreal(Epi)
+    if exist ('pFitTransparent','var')
+        if ~isempty(pFitImplicit) && isreal(pFitTransparent)
             % ellipse params
-            pupil.implicitEllipseParams(i,:) = Epi';
-            pupil.explicitEllipseParams(i,:) = Ep';
+            pupil.transparentEllipseParams(i,:) = pFitTransparent';
+            pupil.implicitEllipseParams(i,:) = pFitImplicit';
             pupil.fitError(i) = fitError;
         else
             continue
         end
     else
+        pupil.transparentEllipseParams(i,:) = NaN;
         pupil.implicitEllipseParams(i,:) = NaN;
-        pupil.explicitEllipseParams(i,:) = NaN;
         pupil.fitError(i)=Inf;
     end
     
+    
     % plot
-    if ~isempty(Epi) && Ep(1) > 0
-        a = num2str(Epi(1));
-        b = num2str(Epi(2));
-        c = num2str(Epi(3));
-        d = num2str(Epi(4));
-        e = num2str(Epi(5));
-        f = num2str(Epi(6));
+    if ~isempty(pFitImplicit) && pFitTransparent(1) > 0
+        a = num2str(pFitImplicit(1));
+        b = num2str(pFitImplicit(2));
+        c = num2str(pFitImplicit(3));
+        d = num2str(pFitImplicit(4));
+        e = num2str(pFitImplicit(5));
+        f = num2str(pFitImplicit(6));
         
         % note that X and Y indices need to be swapped!
         eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
@@ -192,18 +195,10 @@ for i = 1:numFrames
 
     range=min([window,i-1]);
     
-    dataVector=squeeze(pupil.explicitEllipseParams(:,3))';
-    errorVector=squeeze(pupil.fitError(:));
-    mean_prior = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
-    plb(3)=mean_prior*0.9;
-    pub(3)=mean_prior*1.1;
+    dataVector=squeeze(pupil.transparentEllipseParams(:,3))';
+    mean_prior = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2)
 
-    dataVector=squeeze(pupil.explicitEllipseParams(:,4))';
-    errorVector=squeeze(pupil.fitError(:));
-    mean_prior = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
-    plb(4)=mean_prior*0.9;
-    pub(4)=mean_prior*1.1;
-    
+
 end
 
 
