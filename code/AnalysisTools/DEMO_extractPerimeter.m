@@ -19,6 +19,11 @@ params.sessionDate = '102116';
 params.projectSubfolder = 'session1_restAndStructure';
 params.runName = 'rfMRI_REST_AP_run01';
 
+% params.subjectName = 'TOME_3013';
+% params.sessionDate = '021717';
+% params.projectSubfolder = 'session2_spatialstimuli';
+% params.runName = 'tfMRI_FLASH_AP_run01';
+
 %% set paths
 videoPath = fullfile(dropboxDir,'TOME_processing',params.projectSubfolder,params.subjectName,params.sessionDate,'EyeTracking');
 videoPath = dropboxDir;
