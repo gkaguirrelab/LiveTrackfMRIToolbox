@@ -1,4 +1,4 @@
-function [pFitTransparent, pSD, e] = calcPupilLikelihood(x,y, lb, ub, plb, pub)
+function [pFitTransparent, pSD, e] = calcPupilLikelihood(x,y, lb, ub)
 % This function takes 
 
 % Fit an ellipse to data by minimizing point-to-curve distance.
@@ -10,7 +10,7 @@ function [pFitTransparent, pSD, e] = calcPupilLikelihood(x,y, lb, ub, plb, pub)
 % pFitTransparent:
 %    parameters of ellipse expressed in transparent form
 % pSD:
-%    standard deviations of the parameters estimated by bootstrap
+%    standard deviations of the parameters estimated from the Hessian
 % e:
 %    sqrt of the sum squared distance of the likelihood fit to the data
 %
@@ -22,22 +22,7 @@ function [pFitTransparent, pSD, e] = calcPupilLikelihood(x,y, lb, ub, plb, pub)
 %    upper and lower bounds for the fit search (in ellipse transparent
 %    form)
 %
-% plb, pub:
-%    upper and lower "plausible" bounds for the fit search, which is used
-%    by the BADS search routine
 
-
-if ~exist('bads','file')
-    error('LiveTrackfMRIToolbox:DependencyMissing', 'This function requires the BADS Bayesian non-linear search tool.\n');
-end
-
-% if the plausible upper and lower bounds not set, use the hard bounds
-if ~isempty(plb)
-    plb=lb;
-end
-if ~isempty(pub)
-    pub=ub;
-end
 
 % compute a close-enough initial estimate
 pInitImplicit = quad2dfit_taubin(x,y);
@@ -47,20 +32,25 @@ switch imconic(pInitImplicit,0)
         pInitImplicit = ellipsefit_direct(x,y);
 end
 
-% conver the initial estimate from implicit form to transparent form
+% convert the initial estimate from implicit form to transparent form
 pInitTransparent = ellipse_ex2transparent(ellipse_im2ex(pInitImplicit));
 
-% Perform Bayesian Adaptive Direct Search (BADS) optimization
-% https://github.com/lacerbi/bads
-opts = bads('defaults');   % Get a default OPTIONS struct
-opts.Display = 'off';      % Print only basic output ('off' turns off)
-
-% We will minimize the sqrt of the sum of squared distance values
+% Find the ellipse parameters (in transparent form) using a non-linear
+% search. We minimize the sqrt of the sum of squared distance values
 % of the points to the ellipse fit
-myFun = @(p) sqrt(nansum(ellipsefit_distance(x,y,ellipse_transparent2ex(p)).^2));
-[pFitTransparent,e] = bads(myFun, pInitTransparent, lb, ub, plb, pub, [], opts);
 
-pSD=0;
+options = optimset('fmincon');
+options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','interior-point');
+        
+myFun = @(p) sqrt(nansum(ellipsefit_distance(x,y,ellipse_transparent2ex(p)).^2));
+[pFitTransparent,e,~,~,~,~,Hessian] = fmincon(myFun, pInitTransparent, [], [], [], [], lb, ub, [], options);
+
+% The sqrt of the diagonals of the inverse Hessian matrix approxiate the
+%  SEM of the parameter estimates (with multiple caveats regarding how the
+%  Hessian returned by fmincon is inaccurate for this purpose). We use
+%  this (potentially inaccurate) estimate, multiplied by the sqrt of the
+%  number of data points to esimate the SD of the parameters.
+pSD = sqrt(diag(inv(Hessian))) .* sqrt(length(x));
 
 function [d,ddp] = ellipsefit_distance(x,y,p)
 % Distance of points to ellipse defined with explicit parameters (center,

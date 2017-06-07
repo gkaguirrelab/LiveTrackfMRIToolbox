@@ -100,12 +100,8 @@ clear RGB inObj
 % (theta).
 
 % Define the hard upper and lower boundaries
-lb = [0,  0,  75,   0,  -0.5*pi];
-ub = [240,320,10000,0.7, 0.5*pi];
-
-% Define the initial plausble upper and lower boundaries
-plb = [0,  0,  75,   0,  -0.5*pi];
-pub = [240,320,10000,0.7, 0.5*pi];
+lb = [0,  0,  1000,   0,  -0.5*pi];
+ub = [240,320,10000,0.55, 0.5*pi];
 
 % Define a prior window in units of samples
 window=50;
@@ -136,7 +132,7 @@ for i = 1:numFrames
     [Xc, Yc] = ind2sub(size(binP),find(binP));
     
 %    try
-        [pFitTransparent, pSD, fitError] = calcPupilLikelihood(Xc,Yc, lb, ub, plb, pub);
+        [pFitTransparent, pSD, fitError] = calcPupilLikelihood(Xc,Yc, lb, ub);
         pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pFitTransparent));
 %    catch ME
 %    end
@@ -144,13 +140,13 @@ for i = 1:numFrames
 %%        clear ME
  %       continue
  %   end
-    
-    
+       
     % store results
     if exist ('pFitTransparent','var')
         if ~isempty(pFitImplicit) && isreal(pFitTransparent)
             % ellipse params
             pupil.transparentEllipseParams(i,:) = pFitTransparent';
+            pupil.transparentEllipseSD(i,:) = pSD';
             pupil.implicitEllipseParams(i,:) = pFitImplicit';
             pupil.fitError(i) = fitError;
         else
@@ -196,8 +192,13 @@ for i = 1:numFrames
     range=min([window,i-1]);
     
     dataVector=squeeze(pupil.transparentEllipseParams(:,3))';
-    mean_prior = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2)
+    mean_prior(i) = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
+    sigma_prior(i) = std(dataVector(i-range:i-1),exponentialWeights(end-range+1:end));
 
+        % Calculate the posterior
+%     mean_posterior = sigma_prior^2*mean_likelihood/(sigma_prior^2+sigma_likelihood^2) + ...
+%         sigma_likelihood^2*mean_prior/(sigma_prior^2+sigma_likelihood^2);
+%     sigma_posterior = sqrt(sigma_prior^2*sigma_likelihood^2/(sigma_prior^2+sigma_likelihood^2));
 
 end
 
