@@ -8,9 +8,9 @@ function [pFitTransparent, pSD, e] = calcPupilLikelihood(x,y, lb, ub)
 %
 % Output arguments:
 % pFitTransparent:
-%    parameters of ellipse expressed in transparent form
+%    parameters of ellipse expressed in transparent form (row vec)
 % pSD:
-%    standard deviations of the parameters estimated from the Hessian
+%    standard deviations of the parameters estimated from the Hessian (row vec)
 % e:
 %    sqrt of the sum squared distance of the likelihood fit to the data
 %
@@ -50,7 +50,7 @@ myFun = @(p) sqrt(nansum(ellipsefit_distance(x,y,ellipse_transparent2ex(p)).^2))
 %  Hessian returned by fmincon is inaccurate for this purpose). We use
 %  this (potentially inaccurate) estimate, multiplied by the sqrt of the
 %  number of data points to esimate the SD of the parameters.
-pSD = sqrt(diag(inv(Hessian))) .* sqrt(length(x));
+pSD = (sqrt(diag(inv(Hessian))) .* sqrt(length(x)))';
 
 function [d,ddp] = ellipsefit_distance(x,y,p)
 % Distance of points to ellipse defined with explicit parameters (center,

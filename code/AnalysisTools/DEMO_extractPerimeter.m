@@ -95,16 +95,34 @@ end
 
 clear RGB inObj
 
+
+%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN GEOFF CODE HERE
+%%%%%%%%%%%%%%%%%%%%%%%
+
+
 % We will fit ellipses that are cast in "transparent" parameter form:
 % center (cx,cy), its area (a), its eccentricity (e), and its angle of tilt
 % (theta).
 
-% Define the hard upper and lower boundaries
+% Define the hard upper and lower boundaries.
+% We can set an upper boundary on the eccentricity parameter. Eccentricity
+% is related to ratio of the semimajor and semiminor axes, and can be
+% calculated using:
+%   eccentricity = axes2ecc(semimajor, semiminor)
+% If we wish to prevent ellipses with an aspect ratio greater than 1.2 : 1,
+% this gives us an eccentricity threshold of ~0.55.
+
 lb = [0,  0,  1000,   0,  -0.5*pi];
 ub = [240,320,10000,0.55, 0.5*pi];
 
+% Define the initial prior values. Set to large SD values to cause the
+% initial parameters to be dominated by the fits, and not the prior
+pPriorMeanTransparent = [120,120,6000,0,0];
+pPriorSDTransparent = [50,50,50,50,50];
+
 % Define a prior window in units of samples
-window=50;
+window=25;
 windowSupport=1:1:window;
 exponentialTauParam = window/4;
 
@@ -124,59 +142,64 @@ for i = 1:numFrames
     pupilRange = params.pupilRange;
     glintRange = params.glintRange;
     [pCenters, pRadii,pMetric, gCenters, gRadii,gMetric, pupilRange, glintRange] = circleFit(I,params,pupilRange,glintRange);
+
     % get pupil perimeter
     [binP] = getPupilPerimeter(I,pCenters,pRadii, sep, params);
-    
-    imshow(binP)
-    
+
+    % get the boundary points
     [Xc, Yc] = ind2sub(size(binP),find(binP));
+
+    % fit an ellipse to the boundaary
+    [pFitTransparent, pFitSD, ~] = calcPupilLikelihood(Xc,Yc, lb, ub);
     
-%    try
-        [pFitTransparent, pSD, fitError] = calcPupilLikelihood(Xc,Yc, lb, ub);
-        pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pFitTransparent));
-%    catch ME
-%    end
-%    if  exist ('ME', 'var')
-%%        clear ME
- %       continue
- %   end
-       
+    % calculate the posterior values for the pupil fits, given the current
+    % measurement and the priors
+    pPosteriorTransparent = pPriorSDTransparent.^2.*pFitTransparent./(pPriorSDTransparent.^2+pFitSD.^2) + ...
+        pFitSD.^2.*pPriorMeanTransparent./(pPriorSDTransparent.^2+pFitSD.^2);
+    
+    % re-calculate the fit, fixing the pupil size from the posterior
+    lb_pinArea = lb; lb_pinArea(3) = pPosteriorTransparent(3);
+    ub_pinArea = ub; ub_pinArea(3) = pPosteriorTransparent(3);
+    [pFitTransparent, pFitSD, fitError] = calcPupilLikelihood(Xc,Yc, lb_pinArea, ub_pinArea);
+    
     % store results
-    if exist ('pFitTransparent','var')
-        if ~isempty(pFitImplicit) && isreal(pFitTransparent)
-            % ellipse params
-            pupil.transparentEllipseParams(i,:) = pFitTransparent';
-            pupil.transparentEllipseSD(i,:) = pSD';
-            pupil.implicitEllipseParams(i,:) = pFitImplicit';
-            pupil.fitError(i) = fitError;
-        else
-            continue
-        end
-    else
-        pupil.transparentEllipseParams(i,:) = NaN;
-        pupil.implicitEllipseParams(i,:) = NaN;
-        pupil.fitError(i)=Inf;
-    end
+    pupil.pFitTransparent(i,:) = pFitTransparent';
+    pupil.pFitSD(i,:) = pFitSD';
+    pupil.fitError(i) = fitError;
     
+    % Update the prior, which is the mean of the previous fit
+    % values, weighted by a decaying exponential in time
+    if i > exponentialTauParam
+        range=min([window,i-1]);
+        for jj=1:5
+            dataVector=squeeze(pupil.pFitTransparent(:,jj))';
+            pPriorMeanTransparent(jj) = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
+            pPriorSDTransparent(jj) = std(dataVector(i-range:i-1),exponentialWeights(end-range+1:end));
+        end
+    end
     
     % plot
-    if ~isempty(pFitImplicit) && pFitTransparent(1) > 0
-        a = num2str(pFitImplicit(1));
-        b = num2str(pFitImplicit(2));
-        c = num2str(pFitImplicit(3));
-        d = num2str(pFitImplicit(4));
-        e = num2str(pFitImplicit(5));
-        f = num2str(pFitImplicit(6));
-        
-        % note that X and Y indices need to be swapped!
-        eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
-        
-        if isfield(params,'outVideo')
-            hold on
-            h= ezplot(eqt,[1, 240, 1, 320]);
-            set (h, 'Color', 'green')
-        end
+
+    % Plot the pupil boundary data points
+    imshow(binP)
+
+    pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pFitTransparent));
+    a = num2str(pFitImplicit(1));
+    b = num2str(pFitImplicit(2));
+    c = num2str(pFitImplicit(3));
+    d = num2str(pFitImplicit(4));
+    e = num2str(pFitImplicit(5));
+    f = num2str(pFitImplicit(6));
+    
+    % note that X and Y indices need to be swapped!
+    eqt= ['(',a, ')*y^2 + (',b,')*x*y + (',c,')*x^2 + (',d,')*y+ (',e,')*x + (',f,')'];
+    
+    if isfield(params,'outVideo')
+        hold on
+        h= ezplot(eqt,[1, 240, 1, 320]);
+        set (h, 'Color', 'green')
     end
+    
     
     % save frame
     if isfield(params,'outVideo')
@@ -184,22 +207,6 @@ for i = 1:numFrames
         writeVideo(outObj,frame);
     end
     
-    % update the plausible bounds
-
-    % Obtain the mean of the prior major axis values, weighted by the
-    % decaying exponential in time and by the inverse fitError
-
-    range=min([window,i-1]);
-    
-    dataVector=squeeze(pupil.transparentEllipseParams(:,3))';
-    mean_prior(i) = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
-    sigma_prior(i) = std(dataVector(i-range:i-1),exponentialWeights(end-range+1:end));
-
-        % Calculate the posterior
-%     mean_posterior = sigma_prior^2*mean_likelihood/(sigma_prior^2+sigma_likelihood^2) + ...
-%         sigma_likelihood^2*mean_prior/(sigma_prior^2+sigma_likelihood^2);
-%     sigma_posterior = sqrt(sigma_prior^2*sigma_likelihood^2/(sigma_prior^2+sigma_likelihood^2));
-
 end
 
 
