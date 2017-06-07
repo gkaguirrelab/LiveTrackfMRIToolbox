@@ -59,7 +59,7 @@ params.maskBox   = [4 30];
 sep = strel('rectangle',params.maskBox);
 
 % force number of frames
-params.forceNumFrames = 200;
+params.forceNumFrames = 1000;
 params.ellipseThresh   = [0.9 0.9];
 params.gammaCorrection = 1;
 
@@ -155,20 +155,21 @@ for i = 1:numFrames
     [Xc, Yc] = ind2sub(size(binP),find(binP));
 
     % fit an ellipse to the boundaary
-    [pFitTransparent, pFitSD, ~] = calcPupilLikelihood(Xc,Yc, lb, ub);
+    [pInitialFitTransparent, pFitSD, ~] = calcPupilLikelihood(Xc,Yc, lb, ub);
     
     % calculate the posterior values for the pupil fits, given the current
     % measurement and the priors
-    pPosteriorTransparent = pPriorSDTransparent.^2.*pFitTransparent./(pPriorSDTransparent.^2+pFitSD.^2) + ...
+    pPosteriorTransparent = pPriorSDTransparent.^2.*pInitialFitTransparent./(pPriorSDTransparent.^2+pFitSD.^2) + ...
         pFitSD.^2.*pPriorMeanTransparent./(pPriorSDTransparent.^2+pFitSD.^2);
     
     % re-calculate the fit, fixing the pupil size from the posterior
     lb_pinArea = lb; lb_pinArea(3) = pPosteriorTransparent(3);
     ub_pinArea = ub; ub_pinArea(3) = pPosteriorTransparent(3);
-    [pFitTransparent, pFitSD, fitError] = calcPupilLikelihood(Xc,Yc, lb_pinArea, ub_pinArea);
+    [pFinalFitTransparent, pFitSD, fitError] = calcPupilLikelihood(Xc,Yc, lb_pinArea, ub_pinArea);
     
     % store results
-    pupil.pFitTransparent(i,:) = pFitTransparent';
+    pupil.pInitialFitTransparent(i,:) = pInitialFitTransparent';
+    pupil.pFinalFitTransparent(i,:) = pFinalFitTransparent';
     pupil.pFitSD(i,:) = pFitSD';
     pupil.fitError(i) = fitError;
     
@@ -177,7 +178,7 @@ for i = 1:numFrames
     if i > exponentialTauParam
         range=min([window,i-1]);
         for jj=1:5
-            dataVector=squeeze(pupil.pFitTransparent(:,jj))';
+            dataVector=squeeze(pupil.pInitialFitTransparent(:,jj))';
             pPriorMeanTransparent(jj) = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
             pPriorSDTransparent(jj) = std(dataVector(i-range:i-1),exponentialWeights(end-range+1:end));
         end
@@ -188,7 +189,7 @@ for i = 1:numFrames
     % Plot the pupil boundary data points
     imshow(binP)
 
-    pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pFitTransparent));
+    pFitImplicit = ellipse_ex2im(ellipse_transparent2ex(pFinalFitTransparent));
     a = num2str(pFitImplicit(1));
     b = num2str(pFitImplicit(2));
     c = num2str(pFitImplicit(3));
