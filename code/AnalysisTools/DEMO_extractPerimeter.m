@@ -127,9 +127,9 @@ pPriorMeanTransparent = [120,120,6000,0,0];
 pPriorSDTransparent = [50,50,50,50,50];
 
 % Define a prior window in units of samples
-window=25;
+window=70;
 windowSupport=1:1:window;
-exponentialTauParam = window/4;
+exponentialTauParam = round(window/4);
 
 % Define a decaying exponential function that will be used to weight the
 % contribution of prior values to the creation of the prior distribution
@@ -179,8 +179,8 @@ for i = 1:numFrames
         range=min([window,i-1]);
         for jj=1:5
             dataVector=squeeze(pupil.pInitialFitTransparent(:,jj))';
-            pPriorMeanTransparent(jj) = sum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./sum(exponentialWeights(end-range+1:end),2);
-            pPriorSDTransparent(jj) = std(dataVector(i-range:i-1),exponentialWeights(end-range+1:end));
+            pPriorMeanTransparent(jj) = nansum(exponentialWeights(end-range+1:end).*dataVector(i-range:i-1),2)./nansum(exponentialWeights(end-range+1:end),2);
+            pPriorSDTransparent(jj) = nanstd(dataVector(i-range:i-1),exponentialWeights(end-range+1:end));
         end
     end
     
