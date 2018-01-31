@@ -1,0 +1,85 @@
+; Copyright 2013-2014 Cambridge Research Systems Ltd.
+ 
+[Strings]
+ManufacturerName="Cambridge Research Systems Ltd."
+ServiceName="USB CDC ACM Class Driver"
+colorcal.mkii.Name="CRS ColorCAL MKII Colorimeter - USB CDC ACM Driver"
+bits.sharp.Name="CRS Bits# Stimulus Processor - USB CDC ACM Driver"
+visage.mkii.Name="CRS ViSaGe MKII Stimulus Generator - USB CDC ACM Driver"
+lm.i.Name="CRS LM1 Light Meter - USB CDC ACM Driver"
+lm.ii.Name="CRS LM2 Densitometer - USB CDC ACM Driver"
+lm.iii.Name="CRS LM3 Light Meter - USB CDC ACM Driver"
+livetrack.av.Name="CRS LiveTrack AV for fMRI - USB CDC ACM Driver"
+livetrack.fm.Name="CRS LiveTrack FM Fixation Monitor - USB CDC ACM Driver"
+livetrack.ap.Name="CRS LiveTrack AP Pupilometer - USB CDC ACM Driver"
+boldscreen.Name="CRS BOLDscreen MR Safe LCD Monitor - USB CDC ACM Driver"
+display.plusplus.bits.sharp="CRS Display++ LCD Monitor in Bits# Mode - USB CDC ACM Driver"
+display.plusplus.monitor="CRS Display++ LCD Monitor in Monitor Mode - USB CDC ACM Driver"
+
+[DefaultInstall]
+CopyINF=crsltd_usb_cdc_acm.inf
+ 
+[Version]
+Class=Ports
+ClassGuid={4D36E978-E325-11CE-BFC1-08002BE10318}
+Signature="$Windows NT$"
+Provider=%ManufacturerName%
+CatalogFile=crsltd_usb_cdc_acm.cat
+DriverVer=07/24/2014,1.0.0.7
+ 
+[Manufacturer]
+%ManufacturerName%=DeviceList, NTamd64
+ 
+[DestinationDirs]
+FakeModemCopyFileSection=12
+DefaultDestDir=12
+ 
+[DeviceList]
+%colorcal.mkii.Name%=DriverInstall, USB\VID_0861&PID_1001
+%bits.sharp.Name%=DriverInstall, USB\VID_0861&PID_1072
+%visage.mkii.Name%=DriverInstall, USB\VID_0861&PID_1093
+%lm.i.Name%=DriverInstall, USB\VID_0861&PID_0512
+%lm.ii.Name%=DriverInstall, USB\VID_0861&PID_0510
+%lm.iii.Name%=DriverInstall, USB\VID_0861&PID_0511
+%livetrack.fm.Name%=DriverInstall, USB\VID_0861&PID_3410&MI_03
+%livetrack.ap.Name%=DriverInstall, USB\VID_0861&PID_3411&MI_03
+%livetrack.av.Name%=DriverInstall, USB\VID_0861&PID_3412&MI_03
+%boldscreen.Name%=DriverInstall, USB\VID_0861&PID_1108
+%display.plusplus.bits.sharp%=DriverInstall, USB\VID_0861&PID_1204
+%display.plusplus.monitor%=DriverInstall, USB\VID_0861&PID_1224
+
+[DeviceList.NTamd64]
+%colorcal.mkii.Name%=DriverInstall, USB\VID_0861&PID_1001
+%bits.sharp.Name%=DriverInstall, USB\VID_0861&PID_1072
+%visage.mkii.Name%=DriverInstall, USB\VID_0861&PID_1093
+%lm.i.Name%=DriverInstall, USB\VID_0861&PID_0512
+%lm.ii.Name%=DriverInstall, USB\VID_0861&PID_0510
+%lm.iii.Name%=DriverInstall, USB\VID_0861&PID_0511
+%livetrack.fm.Name%=DriverInstall, USB\VID_0861&PID_3410&MI_03
+%livetrack.ap.Name%=DriverInstall, USB\VID_0861&PID_3411&MI_03
+%livetrack.av.Name%=DriverInstall, USB\VID_0861&PID_3412&MI_03
+%boldscreen.Name%=DriverInstall, USB\VID_0861&PID_1108
+%display.plusplus.bits.sharp%=DriverInstall, USB\VID_0861&PID_1204
+%display.plusplus.monitor%=DriverInstall, USB\VID_0861&PID_1224
+ 
+[DriverInstall]
+include=mdmcpq.inf,usb.inf
+CopyFiles = FakeModemCopyFileSection
+AddReg=DriverAddReg
+ 
+[DriverAddReg]
+HKR,,DevLoader,,*ntkern 
+HKR,,NTMPDriver,,usbser.sys 
+HKR,,EnumPropPages32,,"MsPorts.dll,SerialPortPropPageProvider"
+ 
+[DriverInstall.Services]
+include=mdmcpq.inf
+AddService=usbser, 0x00000002, DriverService
+ 
+[DriverService]
+DisplayName=%ServiceName%
+ServiceType=1
+StartType=3
+ErrorControl=1
+ServiceBinary=%12%\usbser.sys
+LoadOrderGroup=Base
